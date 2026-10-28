@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.splitsmart;
 
 import org.junit.Test;
 
