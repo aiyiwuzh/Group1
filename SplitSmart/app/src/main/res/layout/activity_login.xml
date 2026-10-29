@@ -1,0 +1,74 @@
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#F8FAFC">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="← Back"
+            android:layout_gravity="start"
+            android:layout_marginBottom="24dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Welcome Back"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:textColor="#1E293B"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Log in to SplitSmart"
+            android:textSize="16sp"
+            android:textColor="#64748B"
+            android:layout_marginBottom="32dp"/>
+
+        <EditText
+            android:id="@+id/etEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="USC Email"
+            android:inputType="textEmailAddress"
+            android:singleLine="true"
+            android:layout_marginBottom="16dp"/>
+
+        <EditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Password"
+            android:inputType="textPassword"
+            android:singleLine="true"
+            android:layout_marginBottom="24dp"/>
+
+        <Button
+            android:id="@+id/btnSubmitLogin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Log In"/>
+
+        <TextView
+            android:id="@+id/tvLoginError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#DC2626"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:layout_marginTop="16dp"/>
+
+    </LinearLayout>
+</ScrollView>

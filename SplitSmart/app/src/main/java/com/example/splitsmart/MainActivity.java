@@ -1,7 +1,10 @@
 
 package com.example.splitsmart;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,13 +15,46 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+
 public class MainActivity extends AppCompatActivity {
+
+    private TextView connectionStatus;
+    private Button loginButton;
+    private Button registerButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+
+        connectionStatus = findViewById(R.id.tvConnectionStatus);
+        loginButton = findViewById(R.id.btnLogin);
+        registerButton = findViewById(R.id.btnRegister);
+
+        // Check connection to Spring Boot backend
+        checkBackendConnection();
+
+        // Open login screen
+        loginButton.setOnClickListener(v -> {
+            Intent intent = new Intent(
+                    MainActivity.this,
+                    LoginActivity.class
+            );
+            startActivity(intent);
+        });
+
+        // Registration screen will be implemented next
+        registerButton.setOnClickListener(v -> {
+            Intent intent = new Intent(
+                    MainActivity.this,
+                    RegisterActivity.class
+            );
+            startActivity(intent);
+        });
+    }
+
+    private void checkBackendConnection() {
 
         RetrofitClient.getApiService()
                 .checkHealth()
@@ -30,17 +66,19 @@ public class MainActivity extends AppCompatActivity {
                             Response<String> response) {
 
                         if (response.isSuccessful()) {
-                            Toast.makeText(
-                                    MainActivity.this,
-                                    response.body(),
-                                    Toast.LENGTH_LONG
-                            ).show();
+                            connectionStatus.setText(
+                                    "Backend connected"
+                            );
+                            connectionStatus.setTextColor(
+                                    0xFF16A34A
+                            );
                         } else {
-                            Toast.makeText(
-                                    MainActivity.this,
-                                    "HTTP error: " + response.code(),
-                                    Toast.LENGTH_LONG
-                            ).show();
+                            connectionStatus.setText(
+                                    "Backend error: " + response.code()
+                            );
+                            connectionStatus.setTextColor(
+                                    0xFFDC2626
+                            );
                         }
                     }
 
@@ -49,11 +87,12 @@ public class MainActivity extends AppCompatActivity {
                             Call<String> call,
                             Throwable t) {
 
-                        Toast.makeText(
-                                MainActivity.this,
-                                "Connection failed: " + t.getMessage(),
-                                Toast.LENGTH_LONG
-                        ).show();
+                        connectionStatus.setText(
+                                "Backend unavailable"
+                        );
+                        connectionStatus.setTextColor(
+                                0xFFDC2626
+                        );
                     }
                 });
     }
