@@ -48,4 +48,12 @@
         android:layout_height="wrap_content"
         android:text="Create Account" />
 
+    <Button
+        android:id="@+id/btnLogout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Log Out"
+        android:layout_marginTop="16dp"
+        android:visibility="gone" />
+
 </LinearLayout>

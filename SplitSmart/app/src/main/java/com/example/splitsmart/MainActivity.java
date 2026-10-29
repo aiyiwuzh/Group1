@@ -15,12 +15,18 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import android.view.View;
+import com.example.splitsmart.session.SessionManager;
+
 
 public class MainActivity extends AppCompatActivity {
 
     private TextView connectionStatus;
     private Button loginButton;
     private Button registerButton;
+
+    private Button logoutButton;
+    private SessionManager sessionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,9 +37,22 @@ public class MainActivity extends AppCompatActivity {
         connectionStatus = findViewById(R.id.tvConnectionStatus);
         loginButton = findViewById(R.id.btnLogin);
         registerButton = findViewById(R.id.btnRegister);
+        sessionManager = new SessionManager(this);
+        logoutButton = findViewById(R.id.btnLogout);
 
-        // Check connection to Spring Boot backend
-        checkBackendConnection();
+        logoutButton.setOnClickListener(v -> {
+            sessionManager.logout();
+
+            Toast.makeText(
+                    this,
+                    "Logged out successfully",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            updateSessionUI();
+        });
+
+        updateSessionUI();
 
         // Open login screen
         loginButton.setOnClickListener(v -> {
@@ -53,7 +72,39 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
     }
+    @Override
+    protected void onResume() {
+        super.onResume();
 
+        if (sessionManager != null) {
+            updateSessionUI();
+        }
+    }
+    private void updateSessionUI() {
+
+        boolean loggedIn = sessionManager.isLoggedIn();
+
+        loginButton.setVisibility(
+                loggedIn ? View.GONE : View.VISIBLE
+        );
+
+        registerButton.setVisibility(
+                loggedIn ? View.GONE : View.VISIBLE
+        );
+
+        logoutButton.setVisibility(
+                loggedIn ? View.VISIBLE : View.GONE
+        );
+
+        if (loggedIn) {
+            connectionStatus.setText(
+                    "Welcome, " + sessionManager.getName()
+            );
+            connectionStatus.setTextColor(0xFF16A34A);
+        } else {
+            checkBackendConnection();
+        }
+    }
     private void checkBackendConnection() {
 
         RetrofitClient.getApiService()

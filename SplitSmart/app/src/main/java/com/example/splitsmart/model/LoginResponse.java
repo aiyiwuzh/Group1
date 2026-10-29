@@ -25,4 +25,8 @@ public class LoginResponse {
     public String getEmail() {
         return email;
     }
+
+    public long getExpiresIn() {
+        return expiresIn;
+    }
 }

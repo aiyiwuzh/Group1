@@ -17,6 +17,9 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import android.widget.Toast;
+import com.example.splitsmart.session.SessionManager;
+
 public class LoginActivity extends AppCompatActivity {
 
     private EditText emailInput;
@@ -68,12 +71,30 @@ public class LoginActivity extends AppCompatActivity {
 
                             LoginResponse result = response.body();
 
-                            // Temporary verification.
-                            // Next we'll save the JWT using SessionManager.
-                            errorText.setText(
-                                    "Logged in as " + result.getName()
+                            SessionManager sessionManager =
+                                    new SessionManager(LoginActivity.this);
+
+                            sessionManager.saveSession(
+                                    result.getToken(),
+                                    result.getName(),
+                                    result.getExpiresIn()
                             );
-                            errorText.setTextColor(0xFF16A34A);
+
+                            Toast.makeText(
+                                    LoginActivity.this,
+                                    "Welcome, " + result.getName(),
+                                    Toast.LENGTH_SHORT
+                            ).show();
+
+                            Intent intent = new Intent(
+                                    LoginActivity.this,
+                                    MainActivity.class
+                            );
+
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+                            startActivity(intent);
+                            finish();
 
                         } else if (response.code() == 401) {
                             errorText.setText("Invalid email or password.");
