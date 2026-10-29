@@ -22,16 +22,23 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(
+                                org.springframework.security.config.http
+                                        .SessionCreationPolicy.STATELESS
+                        )
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/health",
                                 "/api/health/db",
                                 "/api/auth/register",
+                                "/api/auth/login",
                                 "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .httpBasic(basic -> {});
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}));
 
         return http.build();
     }
