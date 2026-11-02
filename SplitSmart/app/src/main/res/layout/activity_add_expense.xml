@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#F8FAFC">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="← Back"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/tvFormHeading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Expense"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#1E293B"
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            style="@style/ExpenseFieldLabel"
+            android:text="Title" />
+
+        <EditText
+            android:id="@+id/etExpenseTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g. Groceries"
+            android:inputType="textCapSentences"
+            android:maxLength="100"
+            android:singleLine="true"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            style="@style/ExpenseFieldLabel"
+            android:text="Amount ($)" />
+
+        <EditText
+            android:id="@+id/etExpenseAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="0.00"
+            android:inputType="numberDecimal"
+            android:singleLine="true"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            style="@style/ExpenseFieldLabel"
+            android:text="Category" />
+
+        <Spinner
+            android:id="@+id/spCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            style="@style/ExpenseFieldLabel"
+            android:text="Paid by" />
+
+        <Spinner
+            android:id="@+id/spPayer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            style="@style/ExpenseFieldLabel"
+            android:text="Split between (at least 2, including the payer)" />
+
+        <LinearLayout
+            android:id="@+id/layoutParticipants"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            style="@style/ExpenseFieldLabel"
+            android:text="Note (optional)" />
+
+        <EditText
+            android:id="@+id/etExpenseNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Add details"
+            android:inputType="textMultiLine|textCapSentences"
+            android:maxLength="500"
+            android:minLines="2"
+            android:gravity="top"
+            android:layout_marginBottom="24dp" />
+
+        <Button
+            android:id="@+id/btnSaveExpense"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save Expense"
+            android:enabled="false" />
+
+        <TextView
+            android:id="@+id/tvExpenseError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#DC2626"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:layout_marginTop="16dp" />
+
+    </LinearLayout>
+</ScrollView>
