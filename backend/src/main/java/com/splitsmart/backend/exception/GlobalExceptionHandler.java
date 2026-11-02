@@ -3,9 +3,11 @@ package com.splitsmart.backend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,5 +29,30 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", message));
+    }
+
+    // Return the reason from services (e.g. "Group not found") so the
+    // Android app can show it, keeping the same HTTP status code.
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatus(
+            ResponseStatusException exception) {
+
+        String message = exception.getReason() != null
+                ? exception.getReason()
+                : exception.getStatusCode().toString();
+
+        return ResponseEntity
+                .status(exception.getStatusCode())
+                .body(Map.of("error", message));
+    }
+
+    // Malformed JSON or an unknown value such as an invalid category
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadable(
+            HttpMessageNotReadableException exception) {
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "Request body is invalid or malformed"));
     }
 }
