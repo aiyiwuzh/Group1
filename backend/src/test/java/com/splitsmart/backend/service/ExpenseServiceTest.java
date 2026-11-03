@@ -341,6 +341,14 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void hugeExactAmountIsABadRequestNotAServerError() {
+        assertStatus(HttpStatus.BAD_REQUEST, () -> expenseService.createExpense(
+                1L, 10L, splitRequest("20.00", 1L, List.of(1L, 2L), SplitMethod.EXACT,
+                        Map.of(1L, new BigDecimal("1E+30"), 2L, BigDecimal.ZERO))));
+        verify(expenseRepository, never()).save(any());
+    }
+
+    @Test
     void editingAnExpenseRecalculatesItsShares() {
         Expense expense = existingExpense(alice, false);
         expense.setShares(Map.of(1L, new BigDecimal("450.00"),

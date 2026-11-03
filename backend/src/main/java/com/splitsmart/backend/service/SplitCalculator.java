@@ -82,6 +82,10 @@ public class SplitCalculator {
                 throw new InvalidSplitException(
                         "Shares can have at most 2 decimal places");
             }
+            if (share.compareTo(totalAmount) > 0) {
+                throw new InvalidSplitException(
+                        "A share cannot be more than the total");
+            }
             sumCents += toCents(share);
         }
 
@@ -133,6 +137,11 @@ public class SplitCalculator {
             if (hasMoreThanTwoDecimals(amount)) {
                 throw new InvalidSplitException(
                         "Amounts can have at most 2 decimal places");
+            }
+            // Also stops absurdly large numbers before they overflow
+            if (amount.compareTo(fromCents(totalCents)) > 0) {
+                throw new InvalidSplitException(
+                        "An amount cannot be more than the total of " + money(totalCents));
             }
 
             cents[i] = toCents(amount);

@@ -239,8 +239,28 @@ class SplitCalculatorTest {
 
     @Test
     void exactSplitRejectsNegativeAmountsEvenWhenTheySumToTheTotal() {
+        // The negative amount is first so it is the one that gets rejected
+        InvalidSplitException e = assertThrows(InvalidSplitException.class,
+                () -> exact("20.00", List.of(ALICE, BOB),
+                        values(ALICE, "-10.00", BOB, "30.00")));
+
+        assertTrue(e.getMessage().contains("negative"));
+    }
+
+    @Test
+    void exactAmountLargerThanTheTotalIsRejected() {
         assertInvalid(() -> exact("20.00", List.of(ALICE, BOB),
-                values(ALICE, "30.00", BOB, "-10.00")));
+                values(ALICE, "25.00", BOB, "0.00")));
+    }
+
+    @Test
+    void hugeAmountsAreRejectedCleanlyInsteadOfCrashing() {
+        // 1E+30 is valid JSON. It must be an InvalidSplitException (a clean 400),
+        // not an ArithmeticException (a server error).
+        assertInvalid(() -> exact("10.00", List.of(ALICE, BOB),
+                values(ALICE, "1E+30", BOB, "0")));
+        assertInvalid(() -> calculator.verifySum(
+                values(ALICE, "1E+30", BOB, "0"), d("10.00")));
     }
 
     @Test
@@ -459,7 +479,7 @@ class SplitCalculatorTest {
     @Test
     void verifySumRejectsNegativeOrOverPreciseOrMissingShares() {
         assertInvalid(() -> calculator.verifySum(
-                values(ALICE, "15.00", BOB, "-5.00"), d("10.00")));
+                values(ALICE, "-5.00", BOB, "15.00"), d("10.00")));
         assertInvalid(() -> calculator.verifySum(
                 values(ALICE, "5.005", BOB, "4.995"), d("10.00")));
 
