@@ -9,7 +9,9 @@ import org.hibernate.type.SqlTypes;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Entity
@@ -65,6 +67,21 @@ public class Expense {
     )
     private Set<User> participants = new LinkedHashSet<>();
 
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "split_method", nullable = false, length = 20)
+    private SplitMethod splitMethod = SplitMethod.EQUAL;
+
+    // What each participant owes, keyed by user id. Always adds up to the amount.
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "expense_shares",
+            joinColumns = @JoinColumn(name = "expense_id")
+    )
+    @MapKeyColumn(name = "user_id")
+    @Column(name = "share_amount", nullable = false, precision = 10, scale = 2)
+    private Map<Long, BigDecimal> shares = new LinkedHashMap<>();
+
     protected Expense() {
     }
 
@@ -102,6 +119,8 @@ public class Expense {
     public Instant getUpdatedAt() { return updatedAt; }
     public boolean isSettled() { return settled; }
     public Set<User> getParticipants() { return participants; }
+    public SplitMethod getSplitMethod() { return splitMethod; }
+    public Map<Long, BigDecimal> getShares() { return shares; }
 
     public void setTitle(String title) {
         this.title = title;
@@ -130,5 +149,15 @@ public class Expense {
     public void setParticipants(Set<User> participants) {
         this.participants.clear();
         this.participants.addAll(participants);
+    }
+
+    public void setSplitMethod(SplitMethod splitMethod) {
+        this.splitMethod = splitMethod;
+    }
+
+    // Replaces the shares in place so Hibernate updates rows by user id.
+    public void setShares(Map<Long, BigDecimal> shares) {
+        this.shares.clear();
+        this.shares.putAll(shares);
     }
 }
