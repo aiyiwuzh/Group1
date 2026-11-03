@@ -1,15 +1,25 @@
 
 package com.example.splitsmart.network;
 
+import com.example.splitsmart.model.CurrentUser;
+import com.example.splitsmart.model.Expense;
+import com.example.splitsmart.model.ExpenseRequest;
+import com.example.splitsmart.model.Group;
 import com.example.splitsmart.model.LoginRequest;
 import com.example.splitsmart.model.LoginResponse;
 import com.example.splitsmart.model.RegisterRequest;
 import com.example.splitsmart.model.RegisterResponse;
 
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
+import retrofit2.http.Path;
 
 public interface ApiService {
 
@@ -21,4 +31,44 @@ public interface ApiService {
 
     @POST("api/auth/register")
     Call<RegisterResponse> register(@Body RegisterRequest request);
+
+    @GET("api/auth/me")
+    Call<CurrentUser> getCurrentUser(@Header("Authorization") String auth);
+
+    @GET("api/groups")
+    Call<List<Group>> getMyGroups(@Header("Authorization") String auth);
+
+    @GET("api/groups/{groupId}")
+    Call<Group> getGroup(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId);
+
+    // Expenses
+
+    @GET("api/groups/{groupId}/expenses")
+    Call<List<Expense>> getGroupExpenses(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId);
+
+    @POST("api/groups/{groupId}/expenses")
+    Call<Expense> createExpense(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId,
+            @Body ExpenseRequest request);
+
+    @GET("api/expenses/{id}")
+    Call<Expense> getExpense(
+            @Header("Authorization") String auth,
+            @Path("id") long expenseId);
+
+    @PUT("api/expenses/{id}")
+    Call<Expense> updateExpense(
+            @Header("Authorization") String auth,
+            @Path("id") long expenseId,
+            @Body ExpenseRequest request);
+
+    @DELETE("api/expenses/{id}")
+    Call<Void> deleteExpense(
+            @Header("Authorization") String auth,
+            @Path("id") long expenseId);
 }
