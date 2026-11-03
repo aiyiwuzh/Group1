@@ -11,7 +11,8 @@ The Android starter project and the Docker-based Spring Boot + MySQL development
 
 - **Accounts & Groups (Section 1):** registration, login/logout, and group APIs are implemented; Android has login and registration screens.
 - **Expense Management (Section 2):** expense create/view/edit/delete is implemented in the backend and Android app. See [Expense API](#expense-api).
-- Splitting, balances, settlements, and history are planned features; **do not assume they are implemented yet**.
+- **Expense Splitting (Section 3):** equal, exact-amount, and percentage splits are implemented in the backend, with a share preview endpoint. The Android screens do not use them yet. See [Expense splitting](#expense-splitting).
+- Balances, settlements, and history are planned features; **do not assume they are implemented yet**.
 
 ## Architecture
 
@@ -263,6 +264,53 @@ cd backend && ./mvnw test -Dtest='ExpenseServiceTest,ExpenseRequestValidationTes
 ```
 
 On Android, a logged-in user taps **My Groups & Expenses**, picks a group, and opens `ExpenseListActivity`. A future group screen can open the same list with `ExpenseListActivity.EXTRA_GROUP_ID`.
+
+## Expense splitting
+
+Every expense is divided between its participants with one split method. The create and edit request above accepts two optional fields; leaving them out gives an equal split.
+
+```json
+{
+  "splitMethod": "EXACT",
+  "splitValues": { "1": 20.00, "2": 15.25, "3": 10.25 }
+}
+```
+
+| `splitMethod` | `splitValues` |
+|---|---|
+| `EQUAL` (default) | Not used. The amount is divided as evenly as possible. |
+| `EXACT` | Dollars owed by each participant, keyed by user id. Must add up to `amount`. |
+| `PERCENTAGE` | Percent for each participant, keyed by user id. Must add up to exactly 100. |
+
+To show the shares before saving, call the preview endpoint. It uses the same rules as create and **saves nothing**. Group members only.
+
+```text
+POST /api/groups/{groupId}/expenses/preview
+{ "amount": 10.00, "payerId": 1, "participantIds": [1, 2, 3],
+  "splitMethod": "EQUAL", "splitValues": null }
+```
+
+Both the preview and the expense responses return `splitMethod` and `shares`, one `{userId, name, amount, payer}` per participant. The payer is included in `shares`; their own share is not owed to anyone.
+
+Rules enforced by the backend (`400`, with the reason in `{"error": ...}`):
+
+- Every share is at least $0.00 with at most 2 decimal places, and **the shares always add up to `amount`**. Nothing is saved otherwise.
+- `EXACT`: an amount for every participant (`0.00` is allowed). A blank, negative, or 3-decimal amount is rejected, and so is an amount for someone who is not in the expense.
+- `PERCENTAGE`: a percentage for every participant (`0` is allowed). A blank or negative percentage is rejected.
+- The payer must be one of the participants, and there must be at least 2 participants.
+- Rounding: shares are in whole cents. If the amount cannot be divided evenly (for example $10.00 three ways is $3.34, $3.33, $3.33), the leftover cents go to participants chosen pseudo-randomly. The choice depends only on the request, so the preview and the saved expense always match. Someone at 0% never receives a leftover cent.
+- Editing an expense recalculates its shares.
+
+Tables (migration `V3__create_expense_shares.sql`): `expenses.split_method` and `expense_shares` (one row per expense and participant). The migration gives expenses created before it an equal split. Percentages are not stored, only the resulting shares.
+
+The Android app does not send `splitMethod` or `splitValues` yet, so its expenses are saved as equal splits.
+
+Tests:
+
+```bash
+# Unit tests (no database needed)
+cd backend && ./mvnw test -Dtest='SplitCalculatorTest,SplitPreviewRequestValidationTest,ExpenseServiceTest'
+```
 
 ## Team workflow and commits
 
