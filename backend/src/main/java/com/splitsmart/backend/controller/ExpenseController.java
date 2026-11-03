@@ -3,6 +3,8 @@ package com.splitsmart.backend.controller;
 
 import com.splitsmart.backend.dto.ExpenseRequest;
 import com.splitsmart.backend.dto.ExpenseResponse;
+import com.splitsmart.backend.dto.SharePreviewResponse;
+import com.splitsmart.backend.dto.SplitPreviewRequest;
 import com.splitsmart.backend.service.ExpenseService;
 
 import jakarta.validation.Valid;
@@ -39,6 +41,16 @@ public class ExpenseController {
                 .status(HttpStatus.CREATED)
                 .body(expenseService.createExpense(
                         currentUserId(jwt), groupId, request));
+    }
+
+    // Shows each person's share before the expense is saved.
+    @PostMapping("/groups/{groupId}/expenses/preview")
+    public SharePreviewResponse previewShares(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long groupId,
+            @Valid @RequestBody SplitPreviewRequest request) {
+
+        return expenseService.previewShares(currentUserId(jwt), groupId, request);
     }
 
     @GetMapping("/groups/{groupId}/expenses")

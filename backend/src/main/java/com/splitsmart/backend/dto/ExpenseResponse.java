@@ -2,6 +2,7 @@
 package com.splitsmart.backend.dto;
 
 import com.splitsmart.backend.entity.ExpenseCategory;
+import com.splitsmart.backend.entity.SplitMethod;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -16,6 +17,9 @@ public record ExpenseResponse(
         MemberResponse payer,
         MemberResponse creator,
         List<MemberResponse> participants,
+        SplitMethod splitMethod,
+        // What each participant owes; always adds up to the amount
+        List<ShareResponse> shares,
         String note,
         Instant createdAt,
         Instant updatedAt,

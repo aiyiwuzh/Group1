@@ -22,7 +22,7 @@ class ExpenseRequestValidationTest {
 
         return validator.validate(new ExpenseRequest(
                 title, amount == null ? null : new BigDecimal(amount),
-                null, 1L, List.of(1L, 2L), null));
+                null, 1L, List.of(1L, 2L), null, null, null));
     }
 
     @Test

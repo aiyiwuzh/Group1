@@ -2,6 +2,7 @@
 package com.splitsmart.backend.dto;
 
 import com.splitsmart.backend.entity.ExpenseCategory;
+import com.splitsmart.backend.entity.SplitMethod;
 
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -12,6 +13,7 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 // Used for both creating and editing an expense.
 // The date is never part of the request: it is set by the server.
@@ -36,5 +38,12 @@ public record ExpenseRequest(
         List<Long> participantIds,
 
         @Size(max = 500, message = "Note cannot exceed 500 characters")
-        String note
+        String note,
+
+        // defaults to EQUAL
+        SplitMethod splitMethod,
+
+        // EXACT: dollars per participant id. PERCENTAGE: percent per
+        // participant id. Not used for EQUAL.
+        Map<Long, BigDecimal> splitValues
 ) {}

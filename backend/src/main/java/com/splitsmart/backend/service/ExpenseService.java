@@ -4,10 +4,14 @@ package com.splitsmart.backend.service;
 import com.splitsmart.backend.dto.ExpenseRequest;
 import com.splitsmart.backend.dto.ExpenseResponse;
 import com.splitsmart.backend.dto.MemberResponse;
+import com.splitsmart.backend.dto.ShareResponse;
+import com.splitsmart.backend.dto.SharePreviewResponse;
+import com.splitsmart.backend.dto.SplitPreviewRequest;
 import com.splitsmart.backend.entity.Expense;
 import com.splitsmart.backend.entity.ExpenseCategory;
 import com.splitsmart.backend.entity.Group;
 import com.splitsmart.backend.entity.Membership;
+import com.splitsmart.backend.entity.SplitMethod;
 import com.splitsmart.backend.entity.User;
 import com.splitsmart.backend.repository.ExpenseRepository;
 import com.splitsmart.backend.repository.GroupRepository;
@@ -19,7 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -37,6 +43,7 @@ public class ExpenseService {
     private final GroupRepository groupRepository;
     private final MembershipRepository membershipRepository;
     private final UserRepository userRepository;
+    private final SplitCalculator splitCalculator = new SplitCalculator();
 
     public ExpenseService(
             ExpenseRepository expenseRepository,
@@ -94,21 +101,37 @@ public class ExpenseService {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
     }
 
-    // Validates the request against the group and copies it onto the expense.
-    private void apply(Expense expense, ExpenseRequest request) {
+    // The payer, participants and shares worked out from a request.
+    private record ResolvedSplit(
+            User payer,
+            Set<User> participants,
+            SplitMethod splitMethod,
+            Map<Long, BigDecimal> shares) {
+    }
+
+    // Validates the payer and participants against the group, then works out
+    // each participant's share. Nothing is saved here.
+    private ResolvedSplit resolve(
+            Long groupId,
+            BigDecimal amount,
+            Long payerId,
+            List<Long> participantIds,
+            SplitMethod requestedMethod,
+            Map<Long, BigDecimal> splitValues) {
+
         Map<Long, User> members =
-                membershipRepository.findByGroupId(expense.getGroup().getId())
+                membershipRepository.findByGroupId(groupId)
                         .stream()
                         .map(Membership::getUser)
                         .collect(Collectors.toMap(User::getId, Function.identity()));
 
-        User payer = members.get(request.payerId());
+        User payer = members.get(payerId);
         if (payer == null) {
             throw badRequest("Payer must be a member of this group");
         }
 
         Set<User> participants = new LinkedHashSet<>();
-        for (Long participantId : request.participantIds()) {
+        for (Long participantId : participantIds) {
             User participant = participantId == null ? null : members.get(participantId);
             if (participant == null) {
                 throw badRequest("Every participant must be a member of this group");
@@ -125,19 +148,68 @@ public class ExpenseService {
                     + MIN_PARTICIPANTS + " participants, including the payer");
         }
 
+        SplitMethod method = requestedMethod == null
+                ? SplitMethod.EQUAL : requestedMethod;
+
+        try {
+            Map<Long, BigDecimal> shares = splitCalculator.calculateShares(
+                    amount,
+                    method,
+                    payer.getId(),
+                    participants.stream().map(User::getId).toList(),
+                    splitValues);
+
+            return new ResolvedSplit(payer, participants, method, shares);
+        } catch (InvalidSplitException e) {
+            throw badRequest(e.getMessage());
+        }
+    }
+
+    // Validates the request against the group and copies it onto the expense.
+    private void apply(Expense expense, ExpenseRequest request) {
+        BigDecimal amount = request.amount().setScale(2, RoundingMode.UNNECESSARY);
+
+        ResolvedSplit split = resolve(
+                expense.getGroup().getId(),
+                amount,
+                request.payerId(),
+                request.participantIds(),
+                request.splitMethod(),
+                request.splitValues());
+
         String note = request.note() == null ? null : request.note().trim();
 
         expense.setTitle(request.title().trim());
-        expense.setAmount(request.amount().setScale(2, RoundingMode.UNNECESSARY));
+        expense.setAmount(amount);
         expense.setCategory(request.category() == null
                 ? ExpenseCategory.OTHER : request.category());
-        expense.setPayer(payer);
-        expense.setParticipants(participants);
+        expense.setPayer(split.payer());
+        expense.setParticipants(split.participants());
+        expense.setSplitMethod(split.splitMethod());
+        expense.setShares(split.shares());
         expense.setNote(note == null || note.isEmpty() ? null : note);
     }
 
     private static MemberResponse toMember(User user) {
         return new MemberResponse(user.getId(), user.getName(), user.getEmail());
+    }
+
+    // One row per participant, in the same name order as the participant list.
+    private static List<ShareResponse> toShares(
+            Map<Long, BigDecimal> shares,
+            Collection<User> participants,
+            Long payerId) {
+
+        return participants.stream()
+                .filter(user -> shares.containsKey(user.getId()))
+                .sorted(Comparator.comparing(User::getName,
+                        String.CASE_INSENSITIVE_ORDER))
+                .map(user -> new ShareResponse(
+                        user.getId(),
+                        user.getName(),
+                        shares.get(user.getId()),
+                        user.getId().equals(payerId)))
+                .toList();
     }
 
     private ExpenseResponse toResponse(Expense expense, Long userId) {
@@ -160,6 +232,9 @@ public class ExpenseService {
                 toMember(expense.getPayer()),
                 toMember(expense.getCreator()),
                 participants,
+                expense.getSplitMethod(),
+                toShares(expense.getShares(), expense.getParticipants(),
+                        expense.getPayer().getId()),
                 expense.getNote(),
                 expense.getCreatedAt(),
                 expense.getUpdatedAt(),
@@ -180,6 +255,32 @@ public class ExpenseService {
         apply(expense, request);
 
         return toResponse(expenseRepository.save(expense), userId);
+    }
+
+    // Shows what each person would owe, so the user can check it before
+    // saving. Nothing is saved, and it uses the same rules as createExpense.
+    @Transactional(readOnly = true)
+    public SharePreviewResponse previewShares(
+            Long userId, Long groupId, SplitPreviewRequest request) {
+
+        requireGroup(groupId);
+        requireMember(groupId, userId);
+
+        BigDecimal amount = request.amount().setScale(2, RoundingMode.UNNECESSARY);
+
+        ResolvedSplit split = resolve(
+                groupId,
+                amount,
+                request.payerId(),
+                request.participantIds(),
+                request.splitMethod(),
+                request.splitValues());
+
+        return new SharePreviewResponse(
+                amount,
+                split.splitMethod(),
+                toShares(split.shares(), split.participants(),
+                        split.payer().getId()));
     }
 
     @Transactional(readOnly = true)
