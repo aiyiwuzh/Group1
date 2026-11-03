@@ -15,6 +15,8 @@ import com.example.splitsmart.model.SettlementRequest;
 
 import java.util.List;
 
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;

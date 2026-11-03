@@ -7,7 +7,12 @@ SplitSmart is designed to let registered users create groups, record and split e
 
 ## Project status
 
-The Android starter project and the Docker-based Spring Boot + MySQL development environment have been set up. The `/api/health` and `/api/health/db` endpoints have been tested locally. Authentication, groups, expenses, splitting, balances, settlements, and history are planned features; **do not assume they are implemented yet**.
+The Android starter project and the Docker-based Spring Boot + MySQL development environment have been set up. The `/api/health` and `/api/health/db` endpoints have been tested locally.
+
+- **Accounts & Groups (Section 1):** registration, login/logout, and group APIs are implemented; Android has login and registration screens.
+- **Expense Management (Section 2):** expense create/view/edit/delete is implemented in the backend and Android app. See [Expense API](#expense-api).
+- **Expense Splitting (Section 3):** equal, exact-amount, and percentage splits are implemented in the backend, with a share preview endpoint. The Android screens do not use them yet. See [Expense splitting](#expense-splitting).
+- Balances, settlements, and history are planned features; **do not assume they are implemented yet**.
 
 ## Architecture
 
@@ -77,7 +82,10 @@ Edit `.env` and replace placeholder values with your **own local development pas
 ```dotenv
 DB_PASSWORD=replace_with_a_strong_local_password
 DB_ROOT_PASSWORD=replace_with_a_different_strong_local_password
+JWT_SECRET=output_of_openssl_rand_base64_32
 ```
+
+`JWT_SECRET` signs login tokens and must be a Base64 value of at least 32 bytes. Generate one with `openssl rand -base64 32`.
 
 **Never commit `.env` or paste its real credentials into issues, screenshots, or chat.** `.env.example` must contain placeholders only. Docker Compose uses `.env` for variable substitution; it is not a substitute for a secure production secrets manager.
 
@@ -205,6 +213,104 @@ cd backend
 ```
 
 **Note:** Some Spring Boot integration tests may need a configured database or test profile. If a test fails, inspect its setup rather than assuming Docker is broken. The Dockerfile's current build skips running tests, so run tests separately before merging or submitting.
+
+## Expense API
+
+All expense endpoints require `Authorization: Bearer <token>` from `/api/auth/login`. Errors return `{"error": "message"}`.
+
+| Method | Path | Who | Result |
+|---|---|---|---|
+| `POST` | `/api/groups/{groupId}/expenses` | Group members | `201` with the expense |
+| `GET` | `/api/groups/{groupId}/expenses` | Group members | `200` list, newest first |
+| `GET` | `/api/expenses/{id}` | Group members | `200` with the expense |
+| `PUT` | `/api/expenses/{id}` | Creator only | `200` with the updated expense |
+| `DELETE` | `/api/expenses/{id}` | Creator only | `204` |
+
+Request body for create and edit:
+
+```json
+{
+  "title": "Groceries",
+  "amount": 42.50,
+  "category": "FOOD",
+  "payerId": 1,
+  "participantIds": [1, 2, 3],
+  "note": "Optional"
+}
+```
+
+Rules enforced by the backend (`400` unless noted):
+
+- `amount` is greater than 0 with at most 2 decimal places (stored as `DECIMAL(10,2)`).
+- `category` is `FOOD`, `HOUSING`, `TRANSPORTATION`, `ENTERTAINMENT`, or `OTHER`; it defaults to `OTHER`.
+- The payer and every participant must be group members; the payer must be a participant; at least 2 participants.
+- The creator may record an expense someone else paid for. Payer, participants, and amount can be edited.
+- `createdAt` is set by the server and never changes; there is no date field in the request.
+- Only the creator can edit or delete (`403`). Non-members cannot view (`403`).
+- An expense with `settled = true` cannot be edited or deleted (`409`). Balances & Settlements should set `expenses.settled` when a settlement covers an expense and clear it when that settlement is deleted.
+
+Responses include `payer`, `creator`, and `participants` as `{id, name, email}`, plus `createdAt`, `updatedAt`, `settled`, and `canEdit` (true when the current user may edit or delete).
+
+Tables (migration `V2__create_expenses.sql`): `expenses` and `expense_participants`. Deleting a group deletes its expenses.
+
+Tests:
+
+```bash
+# Unit tests (no database needed)
+cd backend && ./mvnw test -Dtest='ExpenseServiceTest,ExpenseRequestValidationTest'
+
+# End-to-end API tests (backend must be running)
+./test_expenses.sh
+```
+
+On Android, a logged-in user taps **My Groups & Expenses**, picks a group, and opens `ExpenseListActivity`. A future group screen can open the same list with `ExpenseListActivity.EXTRA_GROUP_ID`.
+
+## Expense splitting
+
+Every expense is divided between its participants with one split method. The create and edit request above accepts two optional fields; leaving them out gives an equal split.
+
+```json
+{
+  "splitMethod": "EXACT",
+  "splitValues": { "1": 20.00, "2": 15.25, "3": 10.25 }
+}
+```
+
+| `splitMethod` | `splitValues` |
+|---|---|
+| `EQUAL` (default) | Not used. The amount is divided as evenly as possible. |
+| `EXACT` | Dollars owed by each participant, keyed by user id. Must add up to `amount`. |
+| `PERCENTAGE` | Percent for each participant, keyed by user id. Must add up to exactly 100. |
+
+To show the shares before saving, call the preview endpoint. It uses the same rules as create and **saves nothing**. Group members only.
+
+```text
+POST /api/groups/{groupId}/expenses/preview
+{ "amount": 10.00, "payerId": 1, "participantIds": [1, 2, 3],
+  "splitMethod": "EQUAL", "splitValues": null }
+```
+
+Both the preview and the expense responses return `splitMethod` and `shares`, one `{userId, name, amount, payer}` per participant. The payer is included in `shares`; their own share is not owed to anyone.
+
+Rules enforced by the backend (`400`, with the reason in `{"error": ...}`):
+
+- Every share is at least $0.00 with at most 2 decimal places, and **the shares always add up to `amount`**. Nothing is saved otherwise.
+- `EXACT`: an amount for every participant (`0.00` is allowed). A blank, negative, or 3-decimal amount is rejected, and so is an amount for someone who is not in the expense.
+- `PERCENTAGE`: a percentage for every participant (`0` is allowed). A blank or negative percentage is rejected.
+- The payer must be one of the participants, and there must be at least 2 participants.
+- Rounding: shares are in whole cents. If the amount cannot be divided evenly (for example $10.00 three ways is $3.34, $3.33, $3.33), the leftover cents go to participants chosen pseudo-randomly. The choice depends only on the request, so the preview and the saved expense always match. Someone at 0% never receives a leftover cent.
+- Editing an expense recalculates its shares.
+
+Tables (migration `V3__create_expense_shares.sql`): `expenses.split_method` and `expense_shares` (one row per expense and participant). The migration gives expenses created before it an equal split. Percentages are not stored, only the resulting shares.
+
+The Android app does not send `splitMethod` or `splitValues` yet, so its expenses are saved as equal splits.
+
+Tests:
+
+```bash
+# Unit tests (no database needed)
+cd backend && ./mvnw test -Dtest='SplitCalculatorTest,SplitPreviewRequestValidationTest,ExpenseServiceTest'
+```
 
 ## Team workflow and commits
 

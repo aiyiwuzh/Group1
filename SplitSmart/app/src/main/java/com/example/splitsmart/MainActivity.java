@@ -9,6 +9,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.splitsmart.model.Group;
 import com.example.splitsmart.network.RetrofitClient;
 
 import retrofit2.Call;
@@ -16,7 +17,10 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import android.view.View;
+import androidx.appcompat.app.AlertDialog;
 import com.example.splitsmart.session.SessionManager;
+
+import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -26,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private Button registerButton;
 
     private Button logoutButton;
+    private Button groupsButton;
     private SessionManager sessionManager;
 
     @Override
@@ -39,6 +44,9 @@ public class MainActivity extends AppCompatActivity {
         registerButton = findViewById(R.id.btnRegister);
         sessionManager = new SessionManager(this);
         logoutButton = findViewById(R.id.btnLogout);
+        groupsButton = findViewById(R.id.btnGroups);
+
+        groupsButton.setOnClickListener(v -> chooseGroup());
 
         logoutButton.setOnClickListener(v -> {
             sessionManager.logout();
@@ -96,6 +104,10 @@ public class MainActivity extends AppCompatActivity {
                 loggedIn ? View.VISIBLE : View.GONE
         );
 
+        groupsButton.setVisibility(
+                loggedIn ? View.VISIBLE : View.GONE
+        );
+
         if (loggedIn) {
             connectionStatus.setText(
                     "Welcome, " + sessionManager.getName()
@@ -105,6 +117,70 @@ public class MainActivity extends AppCompatActivity {
             checkBackendConnection();
         }
     }
+    // Pick a group, then open its expenses
+    private void chooseGroup() {
+        String auth = ExpenseUtils.requireAuth(this);
+        if (auth == null) {
+            return;
+        }
+
+        RetrofitClient.getApiService()
+                .getMyGroups(auth)
+                .enqueue(new Callback<List<Group>>() {
+
+                    @Override
+                    public void onResponse(
+                            Call<List<Group>> call,
+                            Response<List<Group>> response) {
+
+                        if (!response.isSuccessful() || response.body() == null) {
+                            Toast.makeText(MainActivity.this,
+                                    ExpenseUtils.errorMessage(
+                                            response, "Could not load groups"),
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        List<Group> groups = response.body();
+
+                        if (groups.isEmpty()) {
+                            Toast.makeText(MainActivity.this,
+                                    "You're not in any groups yet.",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        String[] names = new String[groups.size()];
+                        for (int i = 0; i < groups.size(); i++) {
+                            names[i] = groups.get(i).getName();
+                        }
+
+                        new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("Choose a group")
+                                .setItems(names, (dialog, which) -> {
+                                    Intent intent = new Intent(
+                                            MainActivity.this,
+                                            ExpenseListActivity.class);
+                                    intent.putExtra(
+                                            ExpenseListActivity.EXTRA_GROUP_ID,
+                                            groups.get(which).getId());
+                                    intent.putExtra(
+                                            ExpenseListActivity.EXTRA_GROUP_NAME,
+                                            groups.get(which).getName());
+                                    startActivity(intent);
+                                })
+                                .show();
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<Group>> call, Throwable t) {
+                        Toast.makeText(MainActivity.this,
+                                "Cannot connect to the server.",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
     private void checkBackendConnection() {
 
         RetrofitClient.getApiService()
