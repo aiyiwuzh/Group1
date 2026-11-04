@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/surface_app">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSummaryBack"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="‹  Back"
+            android:textAllCaps="false"
+            android:textColor="@color/brand_ink"
+            app:backgroundTint="@android:color/transparent"
+            app:cornerRadius="14dp" />
+
+        <TextView
+            android:id="@+id/tvSummaryGroupName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Monthly summary"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="@color/ink"
+            android:layout_marginTop="8dp" />
+
+        <!-- Month switcher -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPreviousMonth"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="56dp"
+                android:layout_height="48dp"
+                android:contentDescription="Previous month"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:text="‹"
+                android:textSize="20sp"
+                android:textColor="@color/brand_ink"
+                app:strokeColor="@color/card_outline"
+                app:cornerRadius="14dp" />
+
+            <TextView
+                android:id="@+id/tvSummaryMonth"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/ink" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNextMonth"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="56dp"
+                android:layout_height="48dp"
+                android:contentDescription="Next month"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:text="›"
+                android:textSize="20sp"
+                android:textColor="@color/brand_ink"
+                app:strokeColor="@color/card_outline"
+                app:cornerRadius="14dp" />
+        </LinearLayout>
+
+        <!-- Headline numbers -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/bg_summary_card"
+            android:layout_marginTop="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Group spending"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_secondary" />
+
+            <TextView
+                android:id="@+id/tvSummaryTotal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="$0.00"
+                android:textSize="34sp"
+                android:textStyle="bold"
+                android:textColor="@color/brand_ink" />
+
+            <TextView
+                android:id="@+id/tvSummaryCounts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"
+                android:textColor="@color/ink"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressSummary"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:indeterminate="true"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvSummaryError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/error"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="By category"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/ink"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvSummaryEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No expenses were added this month."
+            android:textSize="15sp"
+            android:textColor="@color/text_secondary"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/layoutCategoryRows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Expenses count toward the month they were added. Settlements are repayments, not spending, so they are not included."
+            android:textSize="13sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginTop="16dp" />
+    </LinearLayout>
+</ScrollView>

@@ -60,6 +60,19 @@
         android:layout_marginBottom="12dp" />
 
     <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnHistory"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:text="History  ·  Monthly summary"
+        android:textAllCaps="false"
+        android:textSize="15sp"
+        android:textColor="@color/brand_ink"
+        app:strokeColor="@color/card_outline"
+        app:cornerRadius="16dp"
+        android:layout_marginBottom="12dp" />
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnMembers"
         style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="match_parent"

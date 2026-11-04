@@ -53,6 +53,13 @@
             android:name=".SettleUpActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".HistoryActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".MonthlySummaryActivity"
+            android:exported="false" />
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
