@@ -40,7 +40,7 @@
             android:id="@+id/tvDetailLocked"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="This expense is covered by a settlement, so it can't be edited or deleted."
+            android:text="This expense is marked settled, so it can't be edited or deleted."
             android:textSize="14sp"
             android:textColor="#92400E"
             android:background="#FEF3C7"
@@ -88,6 +88,14 @@
         <TextView
             android:id="@+id/tvDetailCreated"
             style="@style/ExpenseDetailValue" />
+
+        <Button
+            android:id="@+id/btnMarkSettledExpense"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mark as settled"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
 
         <Button
             android:id="@+id/btnEditExpense"

@@ -18,7 +18,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-// Shows one expense. Only its creator sees Edit and Delete.
+// Shows one expense. Only its creator sees the available actions.
 public class ExpenseDetailActivity extends AppCompatActivity {
 
     public static final String EXTRA_EXPENSE_ID = "expense_id";
@@ -29,6 +29,7 @@ public class ExpenseDetailActivity extends AppCompatActivity {
 
     private Button editButton;
     private Button deleteButton;
+    private Button markSettledButton;
     private TextView errorText;
 
     @Override
@@ -44,6 +45,7 @@ public class ExpenseDetailActivity extends AppCompatActivity {
 
         editButton = findViewById(R.id.btnEditExpense);
         deleteButton = findViewById(R.id.btnDeleteExpense);
+        markSettledButton = findViewById(R.id.btnMarkSettledExpense);
         errorText = findViewById(R.id.tvDetailError);
         Button backButton = findViewById(R.id.btnBack);
 
@@ -57,6 +59,7 @@ public class ExpenseDetailActivity extends AppCompatActivity {
         });
 
         deleteButton.setOnClickListener(v -> confirmDelete());
+        markSettledButton.setOnClickListener(v -> confirmMarkSettled());
     }
 
     @Override
@@ -128,6 +131,50 @@ public class ExpenseDetailActivity extends AppCompatActivity {
         int actions = expense.canEdit() ? View.VISIBLE : View.GONE;
         editButton.setVisibility(actions);
         deleteButton.setVisibility(actions);
+        markSettledButton.setVisibility(actions);
+    }
+
+    private void confirmMarkSettled() {
+        new AlertDialog.Builder(this)
+                .setTitle("Mark expense as settled?")
+                .setMessage("Only continue if this expense has been fully paid. "
+                        + "This marks and locks the expense; it does not record a "
+                        + "payment or change balances.")
+                .setPositiveButton("Mark settled",
+                        (dialog, which) -> markExpenseSettled())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void markExpenseSettled() {
+        markSettledButton.setEnabled(false);
+
+        RetrofitClient.getApiService()
+                .markExpenseSettled(auth, expenseId)
+                .enqueue(new Callback<Expense>() {
+
+                    @Override
+                    public void onResponse(Call<Expense> call,
+                                           Response<Expense> response) {
+                        markSettledButton.setEnabled(true);
+
+                        if (response.isSuccessful() && response.body() != null) {
+                            showExpense(response.body());
+                            Toast.makeText(ExpenseDetailActivity.this,
+                                    "Expense marked as settled",
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
+                            errorText.setText(ExpenseUtils.errorMessage(
+                                    response, "Could not mark expense as settled"));
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Expense> call, Throwable t) {
+                        markSettledButton.setEnabled(true);
+                        errorText.setText("Cannot connect to the server.");
+                    }
+                });
     }
 
     private void confirmDelete() {

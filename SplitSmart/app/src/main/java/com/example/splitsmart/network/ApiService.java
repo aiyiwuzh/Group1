@@ -15,8 +15,6 @@ import com.example.splitsmart.model.SettlementRequest;
 
 import java.util.List;
 
-import java.util.List;
-
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
@@ -71,6 +69,11 @@ public interface ApiService {
             @Header("Authorization") String auth,
             @Path("id") long expenseId,
             @Body ExpenseRequest request);
+
+    @PUT("api/expenses/{id}/settled")
+    Call<Expense> markExpenseSettled(
+            @Header("Authorization") String auth,
+            @Path("id") long expenseId);
 
     @DELETE("api/expenses/{id}")
     Call<Void> deleteExpense(
