@@ -8,8 +8,10 @@ import com.example.splitsmart.model.AddMemberRequest;
 import com.example.splitsmart.model.Expense;
 import com.example.splitsmart.model.ExpenseRequest;
 import com.example.splitsmart.model.Group;
+import com.example.splitsmart.model.HistoryResponse;
 import com.example.splitsmart.model.LoginRequest;
 import com.example.splitsmart.model.LoginResponse;
+import com.example.splitsmart.model.MonthlySummary;
 import com.example.splitsmart.model.RegisterRequest;
 import com.example.splitsmart.model.RegisterResponse;
 import com.example.splitsmart.model.Settlement;
@@ -28,6 +30,7 @@ import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 public interface ApiService {
 
@@ -135,4 +138,23 @@ public interface ApiService {
     Call<Void> deleteSettlement(
             @Header("Authorization") String auth,
             @Path("id") long settlementId);
+
+    // History and monthly summaries. Null query values are left out of the URL.
+
+    @GET("api/groups/{groupId}/history")
+    Call<HistoryResponse> getHistory(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId,
+            @Query("q") String keyword,
+            @Query("type") String type,
+            @Query("category") String category,
+            @Query("memberId") Long memberId,
+            @Query("sort") String sort);
+
+    @GET("api/groups/{groupId}/summary/monthly")
+    Call<MonthlySummary> getMonthlySummary(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId,
+            @Query("month") String month,
+            @Query("timeZone") String timeZone);
 }
