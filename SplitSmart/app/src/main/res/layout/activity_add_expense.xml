@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="#F8FAFC">
+    android:background="@color/surface_app">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -11,11 +12,15 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBack"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="← Back"
+            android:layout_height="48dp"
+            android:text="‹  Back"
+            android:textAllCaps="false"
+            android:textColor="@color/brand_ink"
+            app:backgroundTint="@android:color/transparent"
+            app:cornerRadius="14dp"
             android:layout_marginBottom="16dp" />
 
         <TextView
@@ -25,35 +30,58 @@
             android:text="Add Expense"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#1E293B"
+            android:textColor="@color/ink"
             android:layout_marginBottom="20dp" />
 
         <TextView
             style="@style/ExpenseFieldLabel"
             android:text="Title" />
 
-        <EditText
-            android:id="@+id/etExpenseTitle"
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="e.g. Groceries"
-            android:inputType="textCapSentences"
-            android:maxLength="100"
-            android:singleLine="true"
-            android:layout_marginBottom="16dp" />
+            android:hint="Expense title"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:boxStrokeColor="@color/brand_teal"
+            android:layout_marginBottom="16dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etExpenseTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="e.g. Groceries"
+                android:inputType="textCapSentences"
+                android:maxLength="100"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
             style="@style/ExpenseFieldLabel"
             android:text="Amount ($)" />
 
-        <EditText
-            android:id="@+id/etExpenseAmount"
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="0.00"
-            android:inputType="numberDecimal"
-            android:singleLine="true"
-            android:layout_marginBottom="16dp" />
+            android:hint="Amount"
+            app:prefixText="$"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:boxStrokeColor="@color/brand_teal"
+            android:layout_marginBottom="16dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etExpenseAmount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="0.00"
+                android:inputType="numberDecimal"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
             style="@style/ExpenseFieldLabel"
@@ -78,6 +106,15 @@
             android:layout_marginBottom="16dp" />
 
         <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Everyone starts selected. The payer is included automatically."
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:layout_marginTop="-8dp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
             style="@style/ExpenseFieldLabel"
             android:text="Split between (at least 2, including the payer)" />
 
@@ -92,29 +129,46 @@
             style="@style/ExpenseFieldLabel"
             android:text="Note (optional)" />
 
-        <EditText
-            android:id="@+id/etExpenseNote"
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Add details"
-            android:inputType="textMultiLine|textCapSentences"
-            android:maxLength="500"
-            android:minLines="2"
-            android:gravity="top"
-            android:layout_marginBottom="24dp" />
+            android:hint="Note (optional)"
+            app:boxBackgroundMode="outline"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:boxStrokeColor="@color/brand_teal"
+            android:layout_marginBottom="24dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etExpenseNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Add details"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLength="500"
+                android:minLines="2"
+                android:gravity="top" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSaveExpense"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:text="Save Expense"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            app:backgroundTint="@color/brand_teal"
+            app:cornerRadius="16dp"
             android:enabled="false" />
 
         <TextView
             android:id="@+id/tvExpenseError"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#DC2626"
+            android:textColor="@color/error"
             android:textSize="14sp"
             android:gravity="center"
             android:layout_marginTop="16dp" />

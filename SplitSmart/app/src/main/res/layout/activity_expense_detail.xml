@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="#F8FAFC">
+    android:background="@color/surface_app">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -11,11 +12,15 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBack"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="← Back"
+            android:layout_height="48dp"
+            android:text="‹  Back"
+            android:textAllCaps="false"
+            android:textColor="@color/brand_ink"
+            app:backgroundTint="@android:color/transparent"
+            app:cornerRadius="14dp"
             android:layout_marginBottom="16dp" />
 
         <TextView
@@ -24,7 +29,7 @@
             android:layout_height="wrap_content"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#1E293B" />
+            android:textColor="@color/ink" />
 
         <TextView
             android:id="@+id/tvDetailAmount"
@@ -32,7 +37,7 @@
             android:layout_height="wrap_content"
             android:textSize="34sp"
             android:textStyle="bold"
-            android:textColor="#1E293B"
+            android:textColor="@color/brand_ink"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="16dp" />
 
@@ -42,8 +47,8 @@
             android:layout_height="wrap_content"
             android:text="This expense is marked settled, so it can't be edited or deleted."
             android:textSize="14sp"
-            android:textColor="#92400E"
-            android:background="#FEF3C7"
+            android:textColor="#81530B"
+            android:background="@drawable/bg_warning_card"
             android:padding="12dp"
             android:layout_marginBottom="16dp"
             android:visibility="gone" />
@@ -89,29 +94,41 @@
             android:id="@+id/tvDetailCreated"
             style="@style/ExpenseDetailValue" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMarkSettledExpense"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="54dp"
             android:text="Mark as settled"
+            android:textAllCaps="false"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            app:backgroundTint="@color/brand_teal"
+            app:cornerRadius="16dp"
             android:layout_marginTop="8dp"
             android:visibility="gone" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEditExpense"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="54dp"
             android:text="Edit Expense"
+            android:textAllCaps="false"
+            android:textColor="@color/brand_ink"
+            app:strokeColor="@color/card_outline"
+            app:cornerRadius="16dp"
             android:layout_marginTop="8dp"
             android:visibility="gone" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDeleteExpense"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="54dp"
             android:text="Delete Expense"
-            android:backgroundTint="#DC2626"
-            android:textColor="#FFFFFF"
+            android:textAllCaps="false"
+            android:backgroundTint="@color/error"
+            android:textColor="@color/white"
+            app:cornerRadius="16dp"
             android:layout_marginTop="8dp"
             android:visibility="gone" />
 
@@ -119,7 +136,7 @@
             android:id="@+id/tvDetailError"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#DC2626"
+            android:textColor="@color/error"
             android:textSize="14sp"
             android:gravity="center"
             android:layout_marginTop="16dp" />

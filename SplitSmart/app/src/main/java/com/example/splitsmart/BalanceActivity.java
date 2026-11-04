@@ -1,6 +1,9 @@
 package com.example.splitsmart;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -106,8 +109,8 @@ public class BalanceActivity extends AppCompatActivity {
         for (PairwiseBalance balance : balances) {
             LinearLayout row = new LinearLayout(this);
             row.setOrientation(LinearLayout.VERTICAL);
-            row.setPadding(12, 12, 12, 12);
-            row.setBackgroundColor(0xFFFFFFFF);
+            row.setPadding(dp(16), dp(14), dp(16), dp(14));
+            row.setBackground(cardBackground(row));
 
             TextView description = new TextView(this);
             String amount = ExpenseUtils.formatMoney(balance.getAmount());
@@ -121,20 +124,27 @@ public class BalanceActivity extends AppCompatActivity {
             }
             description.setText(text);
             description.setTextSize(16);
-            description.setTextColor(0xFF1E293B);
+            description.setTextColor(0xFF17212B);
             row.addView(description);
 
             if ("YOU_OWE".equals(balance.getStatus())) {
-                Button payButton = new Button(this);
+                com.google.android.material.button.MaterialButton payButton =
+                        new com.google.android.material.button.MaterialButton(this);
                 payButton.setText("Record payment");
+                payButton.setAllCaps(false);
+                payButton.setTextColor(Color.WHITE);
+                payButton.setCornerRadius(dp(14));
+                payButton.setBackgroundTintList(ColorStateList.valueOf(0xFF0F8B8D));
                 payButton.setOnClickListener(v -> openSettlement(
                         balance.getMemberId(), balance.getMemberName(),
                         balance.getAmount(), null));
-                row.addView(payButton);
+                LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
+                buttonParams.topMargin = dp(12);
+                row.addView(payButton, buttonParams);
             }
 
-            addRowDivider(balanceRows);
-            balanceRows.addView(row);
+            addCardRow(balanceRows, row);
         }
     }
 
@@ -147,8 +157,8 @@ public class BalanceActivity extends AppCompatActivity {
         for (Settlement settlement : settlements) {
             LinearLayout row = new LinearLayout(this);
             row.setOrientation(LinearLayout.VERTICAL);
-            row.setPadding(12, 12, 12, 12);
-            row.setBackgroundColor(0xFFFFFFFF);
+            row.setPadding(dp(16), dp(14), dp(16), dp(14));
+            row.setBackground(cardBackground(row));
 
             TextView summary = new TextView(this);
             summary.setText(settlement.getPayer().getName() + " paid "
@@ -156,7 +166,7 @@ public class BalanceActivity extends AppCompatActivity {
                     + ExpenseUtils.formatMoney(settlement.getAmount())
                     + " · " + ExpenseUtils.formatDate(settlement.getCreatedAt()));
             summary.setTextSize(15);
-            summary.setTextColor(0xFF1E293B);
+            summary.setTextColor(0xFF17212B);
             row.addView(summary);
 
             if (settlement.canEdit()) {
@@ -165,6 +175,7 @@ public class BalanceActivity extends AppCompatActivity {
 
                 Button edit = new Button(this);
                 edit.setText("Edit");
+                edit.setAllCaps(false);
                 edit.setOnClickListener(v -> openSettlement(
                         settlement.getPayee().getId(),
                         settlement.getPayee().getName(),
@@ -174,14 +185,14 @@ public class BalanceActivity extends AppCompatActivity {
 
                 Button delete = new Button(this);
                 delete.setText("Delete");
+                delete.setAllCaps(false);
                 delete.setOnClickListener(v -> confirmDelete(settlement));
                 actions.addView(delete, new LinearLayout.LayoutParams(
                         0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
                 row.addView(actions);
             }
 
-            addRowDivider(settlementRows);
-            settlementRows.addView(row);
+            addCardRow(settlementRows, row);
         }
     }
 
@@ -217,11 +228,28 @@ public class BalanceActivity extends AppCompatActivity {
                 .show();
     }
 
-    private static void addRowDivider(LinearLayout parent) {
-        View divider = new View(parent.getContext());
-        divider.setBackgroundColor(0xFFE2E8F0);
-        parent.addView(divider, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 1));
+    private static void addCardRow(LinearLayout parent, View row) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.bottomMargin = dp(parent, 10);
+        parent.addView(row, params);
+    }
+
+    private static GradientDrawable cardBackground(View view) {
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(Color.WHITE);
+        background.setCornerRadius(dp(view, 16));
+        background.setStroke(dp(view, 1), 0xFFE0E7EA);
+        return background;
+    }
+
+    private static int dp(View view, int value) {
+        return (int) (value * view.getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    private int dp(int value) {
+        return dp(findViewById(R.id.layoutBalanceRows), value);
     }
 
     private static void showMessage(TextView view, String message) {

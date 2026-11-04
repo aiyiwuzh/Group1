@@ -18,7 +18,7 @@
             android:layout_weight="1"
             android:textSize="17sp"
             android:textStyle="bold"
-            android:textColor="#1E293B"
+            android:textColor="@color/ink"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -29,7 +29,7 @@
             android:layout_marginStart="12dp"
             android:textSize="17sp"
             android:textStyle="bold"
-            android:textColor="#1E293B" />
+            android:textColor="@color/brand_ink" />
     </LinearLayout>
 
     <TextView
@@ -38,6 +38,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:textSize="13sp"
-        android:textColor="#64748B" />
+        android:textColor="@color/text_secondary" />
 
 </LinearLayout>
