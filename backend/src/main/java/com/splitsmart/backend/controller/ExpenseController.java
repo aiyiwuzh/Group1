@@ -78,6 +78,14 @@ public class ExpenseController {
         return expenseService.updateExpense(currentUserId(jwt), id, request);
     }
 
+    @PutMapping("/expenses/{id}/settled")
+    public ExpenseResponse markExpenseSettled(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id) {
+
+        return expenseService.markExpenseSettled(currentUserId(jwt), id);
+    }
+
     @DeleteMapping("/expenses/{id}")
     public ResponseEntity<Void> deleteExpense(
             @AuthenticationPrincipal Jwt jwt,

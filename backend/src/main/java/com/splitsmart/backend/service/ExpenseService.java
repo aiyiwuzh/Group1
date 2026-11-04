@@ -93,7 +93,7 @@ public class ExpenseService {
         if (expense.isSettled()) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "This expense is covered by a settlement and cannot be changed");
+                    "This expense is marked as settled and cannot be changed");
         }
     }
 
@@ -314,6 +314,28 @@ public class ExpenseService {
         apply(expense, request);
 
         return toResponse(expenseRepository.saveAndFlush(expense), userId);
+    }
+
+    // The creator may explicitly mark an expense settled after confirming
+    // that it has been paid in full outside the app. This status change does
+    // not create a settlement record or change member balances.
+    @Transactional
+    public ExpenseResponse markExpenseSettled(Long userId, Long expenseId) {
+        Expense expense = requireExpense(expenseId);
+        requireMember(expense.getGroup().getId(), userId);
+
+        if (!expense.getCreator().getId().equals(userId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Only the expense creator can mark this expense settled");
+        }
+
+        if (!expense.isSettled()) {
+            expense.setSettled(true);
+            expenseRepository.saveAndFlush(expense);
+        }
+
+        return toResponse(expense, userId);
     }
 
     @Transactional

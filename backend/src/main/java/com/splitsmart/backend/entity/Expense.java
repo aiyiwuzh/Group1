@@ -55,7 +55,7 @@ public class Expense {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    // Set by Balances & Settlements when a settlement covers this expense.
+    // Set by the creator after confirming the expense has been paid in full.
     @Column(nullable = false)
     private boolean settled;
 
