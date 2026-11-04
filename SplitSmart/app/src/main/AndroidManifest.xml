@@ -38,6 +38,13 @@
         <activity
             android:name=".ExpenseDetailActivity"
             android:exported="false" />
+        <activity
+            android:name=".BalanceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SettleUpActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />

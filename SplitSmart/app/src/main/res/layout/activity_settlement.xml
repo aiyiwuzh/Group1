@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="#F8FAFC">
+
+    <Button
+        android:id="@+id/btnSettlementBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="← Back" />
+
+    <TextView
+        android:id="@+id/tvSettlementTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Record a payment"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:textColor="#1E293B"
+        android:layout_marginTop="12dp" />
+
+    <TextView
+        android:id="@+id/tvSettlementPayee"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Payment to member"
+        android:textSize="17sp"
+        android:textColor="#334155"
+        android:layout_marginTop="20dp" />
+
+    <TextView
+        android:id="@+id/tvSettlementMaximum"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Current amount owed: $0.00"
+        android:textSize="14sp"
+        android:textColor="#64748B"
+        android:layout_marginTop="6dp" />
+
+    <EditText
+        android:id="@+id/etSettlementAmount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Amount paid"
+        android:inputType="numberDecimal"
+        android:singleLine="true"
+        android:layout_marginTop="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enter the amount you paid outside the app. Partial payments are allowed."
+        android:textSize="14sp"
+        android:textColor="#64748B"
+        android:layout_marginTop="6dp" />
+
+    <TextView
+        android:id="@+id/tvSettlementError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#DC2626"
+        android:visibility="gone"
+        android:layout_marginTop="12dp" />
+
+    <Button
+        android:id="@+id/btnSaveSettlement"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save payment"
+        android:layout_marginTop="20dp" />
+</LinearLayout>

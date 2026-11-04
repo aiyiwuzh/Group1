@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#F8FAFC">
+
+    <Button
+        android:id="@+id/btnBalanceBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="← Back" />
+
+    <TextView
+        android:id="@+id/tvBalanceGroupName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Group balances"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:textColor="#1E293B"
+        android:layout_marginTop="8dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Payments are recorded here; SplitSmart does not transfer money."
+        android:textSize="14sp"
+        android:textColor="#64748B"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="12dp" />
+
+    <TextView
+        android:id="@+id/tvBalanceTotals"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="You owe $0.00  ·  You are owed $0.00"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#1E293B"
+        android:padding="12dp"
+        android:background="#E2E8F0" />
+
+    <TextView
+        android:id="@+id/tvBalanceError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#DC2626"
+        android:visibility="gone"
+        android:layout_marginTop="8dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:layout_marginTop="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Balances with group members"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#1E293B"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvNoBalances"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No other members in this group yet."
+                android:textColor="#64748B"
+                android:visibility="gone"
+                android:padding="8dp" />
+
+            <LinearLayout
+                android:id="@+id/layoutBalanceRows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Recorded settlements"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#1E293B"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvSettlementError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#DC2626"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvNoSettlements"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No settlements have been recorded."
+                android:textColor="#64748B"
+                android:visibility="gone"
+                android:padding="8dp" />
+
+            <LinearLayout
+                android:id="@+id/layoutSettlementRows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

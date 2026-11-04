@@ -2,6 +2,7 @@
 package com.example.splitsmart.network;
 
 import com.example.splitsmart.model.CurrentUser;
+import com.example.splitsmart.model.BalanceSummary;
 import com.example.splitsmart.model.Expense;
 import com.example.splitsmart.model.ExpenseRequest;
 import com.example.splitsmart.model.Group;
@@ -9,6 +10,10 @@ import com.example.splitsmart.model.LoginRequest;
 import com.example.splitsmart.model.LoginResponse;
 import com.example.splitsmart.model.RegisterRequest;
 import com.example.splitsmart.model.RegisterResponse;
+import com.example.splitsmart.model.Settlement;
+import com.example.splitsmart.model.SettlementRequest;
+
+import java.util.List;
 
 import java.util.List;
 
@@ -71,4 +76,33 @@ public interface ApiService {
     Call<Void> deleteExpense(
             @Header("Authorization") String auth,
             @Path("id") long expenseId);
+
+    // Balances and settlements
+
+    @GET("api/groups/{groupId}/balances")
+    Call<BalanceSummary> getBalances(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId);
+
+    @GET("api/groups/{groupId}/settlements")
+    Call<List<Settlement>> getGroupSettlements(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId);
+
+    @POST("api/groups/{groupId}/settlements")
+    Call<Settlement> createSettlement(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId,
+            @Body SettlementRequest request);
+
+    @PUT("api/settlements/{id}")
+    Call<Settlement> updateSettlement(
+            @Header("Authorization") String auth,
+            @Path("id") long settlementId,
+            @Body SettlementRequest request);
+
+    @DELETE("api/settlements/{id}")
+    Call<Void> deleteSettlement(
+            @Header("Authorization") String auth,
+            @Path("id") long settlementId);
 }
