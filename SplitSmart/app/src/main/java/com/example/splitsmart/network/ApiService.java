@@ -14,6 +14,9 @@ import com.example.splitsmart.model.RegisterRequest;
 import com.example.splitsmart.model.RegisterResponse;
 import com.example.splitsmart.model.Settlement;
 import com.example.splitsmart.model.SettlementRequest;
+import com.example.splitsmart.model.SharePreviewResponse;
+import com.example.splitsmart.model.SplitPreviewRequest;
+import com.example.splitsmart.model.SuggestedPayment;
 
 import java.util.List;
 
@@ -72,6 +75,12 @@ public interface ApiService {
             @Path("groupId") long groupId,
             @Body ExpenseRequest request);
 
+    @POST("api/groups/{groupId}/expenses/preview")
+    Call<SharePreviewResponse> previewExpenseSplit(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId,
+            @Body SplitPreviewRequest request);
+
     @GET("api/expenses/{id}")
     Call<Expense> getExpense(
             @Header("Authorization") String auth,
@@ -97,6 +106,11 @@ public interface ApiService {
 
     @GET("api/groups/{groupId}/balances")
     Call<BalanceSummary> getBalances(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId);
+
+    @GET("api/groups/{groupId}/balances/suggestions")
+    Call<List<SuggestedPayment>> getSuggestedPayments(
             @Header("Authorization") String auth,
             @Path("groupId") long groupId);
 

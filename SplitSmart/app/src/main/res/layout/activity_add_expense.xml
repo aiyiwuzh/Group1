@@ -127,6 +127,57 @@
 
         <TextView
             style="@style/ExpenseFieldLabel"
+            android:text="How should this be split?" />
+
+        <Spinner
+            android:id="@+id/spSplitMethod"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvSplitHelp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/layoutSplitValues"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPreviewSplit"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Preview split"
+            android:textAllCaps="false"
+            android:textColor="@color/brand_teal"
+            app:backgroundTint="@android:color/transparent"
+            app:cornerRadius="14dp"
+            app:strokeColor="@color/brand_teal"
+            app:strokeWidth="1dp"
+            android:enabled="false"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvSplitPreview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="14dp"
+            android:background="@drawable/bg_summary_card"
+            android:textColor="@color/ink"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            style="@style/ExpenseFieldLabel"
             android:text="Note (optional)" />
 
         <com.google.android.material.textfield.TextInputLayout

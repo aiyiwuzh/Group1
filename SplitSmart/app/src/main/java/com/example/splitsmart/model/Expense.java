@@ -19,6 +19,8 @@ public class Expense {
     private String updatedAt;
     private boolean settled;
     private boolean canEdit;
+    private String splitMethod;
+    private List<ExpenseShare> shares;
 
     public Long getId() {
         return id;
@@ -71,4 +73,8 @@ public class Expense {
     public boolean canEdit() {
         return canEdit;
     }
+
+    public String getSplitMethod() { return splitMethod; }
+
+    public List<ExpenseShare> getShares() { return shares; }
 }
