@@ -59,6 +59,7 @@ public class ExpenseListActivity extends AppCompatActivity {
         Button backButton = findViewById(R.id.btnBack);
         Button addButton = findViewById(R.id.btnAddExpense);
         Button balancesButton = findViewById(R.id.btnBalances);
+        Button membersButton = findViewById(R.id.btnMembers);
 
         adapter = new ExpenseAdapter();
         listView.setAdapter(adapter);
@@ -75,6 +76,13 @@ public class ExpenseListActivity extends AppCompatActivity {
         addButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, AddExpenseActivity.class);
             intent.putExtra(AddExpenseActivity.EXTRA_GROUP_ID, groupId);
+            startActivity(intent);
+        });
+
+        membersButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, GroupMembersActivity.class);
+            intent.putExtra(GroupMembersActivity.EXTRA_GROUP_ID, groupId);
+            intent.putExtra(GroupMembersActivity.EXTRA_GROUP_NAME, groupName);
             startActivity(intent);
         });
 

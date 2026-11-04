@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="24dp"
-    android:background="#F8FAFC">
+    android:background="@color/surface_app">
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnBack"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="← Back"
+        android:layout_height="48dp"
+        android:text="‹  Back"
+        android:textAllCaps="false"
+        android:textColor="@color/brand_ink"
+        app:backgroundTint="@android:color/transparent"
+        app:cornerRadius="14dp"
         android:layout_marginBottom="16dp" />
 
     <TextView
@@ -20,35 +25,58 @@
         android:text="Expenses"
         android:textSize="28sp"
         android:textStyle="bold"
-        android:textColor="#1E293B" />
+        android:textColor="@color/ink" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Group expenses, newest first"
         android:textSize="14sp"
-        android:textColor="#64748B"
+        android:textColor="@color/text_secondary"
         android:layout_marginBottom="16dp" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAddExpense"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:text="+ Add Expense"
+        android:textAllCaps="false"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="@color/brand_teal"
+        app:cornerRadius="16dp"
         android:layout_marginBottom="12dp" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnBalances"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:text="View balances &amp; settlements"
+        android:textAllCaps="false"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="@color/brand_teal"
+        app:cornerRadius="16dp"
         android:layout_marginBottom="12dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnMembers"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:text="View members  ·  Add people"
+        android:textAllCaps="false"
+        android:textSize="15sp"
+        android:textColor="@color/brand_ink"
+        app:strokeColor="@color/card_outline"
+        app:cornerRadius="16dp"
+        android:layout_marginBottom="16dp" />
 
     <TextView
         android:id="@+id/tvListError"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="#DC2626"
+        android:textColor="@color/error"
         android:textSize="14sp"
         android:visibility="gone" />
 
@@ -58,7 +86,7 @@
         android:layout_height="wrap_content"
         android:text="No expenses yet. Tap “Add Expense” to record one."
         android:textSize="15sp"
-        android:textColor="#64748B"
+        android:textColor="@color/text_secondary"
         android:gravity="center"
         android:layout_marginTop="32dp"
         android:visibility="gone" />

@@ -29,6 +29,14 @@
             android:name=".RegisterActivity"
             android:exported="false" />
         <activity
+            android:name=".CreateGroupActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".GroupMembersActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".ExpenseListActivity"
             android:exported="false" />
         <activity

@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Button logoutButton;
     private Button groupsButton;
+    private Button createGroupButton;
     private SessionManager sessionManager;
 
     @Override
@@ -45,8 +46,12 @@ public class MainActivity extends AppCompatActivity {
         sessionManager = new SessionManager(this);
         logoutButton = findViewById(R.id.btnLogout);
         groupsButton = findViewById(R.id.btnGroups);
+        createGroupButton = findViewById(R.id.btnCreateGroup);
 
         groupsButton.setOnClickListener(v -> chooseGroup());
+        createGroupButton.setOnClickListener(v ->
+                startActivity(new Intent(MainActivity.this,
+                        CreateGroupActivity.class)));
 
         logoutButton.setOnClickListener(v -> {
             sessionManager.logout();
@@ -105,6 +110,10 @@ public class MainActivity extends AppCompatActivity {
         );
 
         groupsButton.setVisibility(
+                loggedIn ? View.VISIBLE : View.GONE
+        );
+
+        createGroupButton.setVisibility(
                 loggedIn ? View.VISIBLE : View.GONE
         );
 

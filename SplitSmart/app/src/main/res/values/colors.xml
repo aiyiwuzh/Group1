@@ -2,4 +2,13 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="surface_app">#F4F7F8</color>
+    <color name="ink">#17212B</color>
+    <color name="brand_ink">#243746</color>
+    <color name="brand_teal">#0F8B8D</color>
+    <color name="brand_teal_dark">#087477</color>
+    <color name="text_secondary">#61717D</color>
+    <color name="card_outline">#E0E7EA</color>
+    <color name="success">#16845B</color>
+    <color name="error">#B42318</color>
 </resources>

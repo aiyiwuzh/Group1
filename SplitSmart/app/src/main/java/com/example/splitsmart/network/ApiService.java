@@ -2,7 +2,9 @@
 package com.example.splitsmart.network;
 
 import com.example.splitsmart.model.CurrentUser;
+import com.example.splitsmart.model.CreateGroupRequest;
 import com.example.splitsmart.model.BalanceSummary;
+import com.example.splitsmart.model.AddMemberRequest;
 import com.example.splitsmart.model.Expense;
 import com.example.splitsmart.model.ExpenseRequest;
 import com.example.splitsmart.model.Group;
@@ -40,6 +42,17 @@ public interface ApiService {
 
     @GET("api/groups")
     Call<List<Group>> getMyGroups(@Header("Authorization") String auth);
+
+    @POST("api/groups")
+    Call<Group> createGroup(
+            @Header("Authorization") String auth,
+            @Body CreateGroupRequest request);
+
+    @POST("api/groups/{groupId}/members")
+    Call<Group> addGroupMember(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId,
+            @Body AddMemberRequest request);
 
     @GET("api/groups/{groupId}")
     Call<Group> getGroup(
