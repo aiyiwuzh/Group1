@@ -1,0 +1,24 @@
+Applying the requirements update
+
+1. Make a backup of your current Group1 folder.
+2. Download Group1-requirements-update.zip.
+3. In Terminal, run:
+
+   cd ~/AndroidStudioProjects/Group1
+   unzip -o ~/Downloads/Group1-requirements-update.zip
+
+   The ZIP has project-root paths, so this updates the source files in place.
+   It does not contain your private .env file.
+4. Open the project in Android Studio and wait for Gradle sync to finish.
+5. In a Terminal window at the project root, run:
+
+   docker compose up -d --build
+
+   Flyway will apply migrations V5 through V7 for settlement metadata,
+   custom expense categories, and receipt photo storage.
+6. Run the app in the emulator and review the demo checklist workflows. To switch accounts, tap **Switch User** on the home screen; choose a recent email on the login screen, then enter that user's password. The app remembers up to five email addresses and does not save passwords.
+7. In the group members screen, owners can use the trash button to remove a non-owner member. Non-owners can leave. The backend blocks membership changes while that person has an unpaid balance.
+
+The code was checked locally for XML well-formedness and unresolved merge
+markers. Full Gradle and Maven builds could not run in this environment because
+the wrapper distributions could not be downloaded without network access.

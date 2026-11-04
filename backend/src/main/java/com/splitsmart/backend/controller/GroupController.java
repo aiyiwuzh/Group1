@@ -64,6 +64,23 @@ public class GroupController {
                 currentUserId(jwt), id, request);
     }
 
+    @DeleteMapping("/{id}/members/{memberId}")
+    public ResponseEntity<Void> removeMember(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id,
+            @PathVariable Long memberId) {
+        groupService.removeMember(currentUserId(jwt), id, memberId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/leave")
+    public ResponseEntity<Void> leaveGroup(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id) {
+        groupService.leaveGroup(currentUserId(jwt), id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PutMapping("/{id}")
     public GroupResponse updateGroup(
             @AuthenticationPrincipal Jwt jwt,

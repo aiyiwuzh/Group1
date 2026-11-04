@@ -5,22 +5,24 @@ Android expense-sharing application for USC students and alumni.
 
 SplitSmart is designed to let registered users create groups, record and split expenses, view pairwise balances, record settlements made outside the app, and search transaction history and monthly summaries. Payments are **not** processed in the app.
 
+Amounts currently use USD and each expense records one payer. Mixed-currency balance calculation and splitting one expense across multiple payers are not supported in this version.
+
 ## Project status
 
-The Android starter project and the Docker-based Spring Boot + MySQL development environment have been set up. The `/api/health` and `/api/health/db` endpoints have been tested locally.
+The Android app and Docker-based Spring Boot + MySQL development environment are implemented. Start the services using the Quick start instructions and check `/api/health` and `/api/health/db` before opening the app.
 
-- **Accounts & Groups (Section 1):** registration, login/logout, and group APIs are implemented; Android has login and registration screens.
-- **Expense Management (Section 2):** expense create/view/edit/delete is implemented in the backend and Android app. See [Expense API](#expense-api).
-- **Expense Splitting (Section 3):** equal, exact-amount, and percentage splits are implemented in the backend, with a share preview endpoint. The Android screens do not use them yet. See [Expense splitting](#expense-splitting).
+- **Accounts & Groups (Section 1):** registration, login/logout, profile editing, group creation, member listing, owner-only member addition/removal, member leave, group rename, and group deletion are implemented in the backend and Android app. The login screen also offers a recent-account picker for quick switching; it stores email addresses only, never passwords.
+- **Expense Management (Section 2):** expense create/view/edit/delete, custom category labels, and optional receipt photo attachments are implemented in the backend and Android app. See [Expense API](#expense-api).
+- **Expense Splitting (Section 3):** equal, exact-amount, and percentage splits, saved split inputs, and share previews are implemented in the backend and Android app. See [Expense splitting](#expense-splitting).
 - **Balances & Settlements (Section 4):** pairwise balances, owed/receivable totals, suggested payments, and settlement create/edit/delete are implemented in the backend and Android app.
 - **History & Monthly Summary (Section 5):** a searchable, filterable history of expenses and settlements and a monthly spending summary are implemented in the backend and Android app. See [History API](#history-api).
 
 ## Architecture
 
 ```text
-Android app (Java, Android Studio)
+Android app (Java, Android Studio, Retrofit)
        |
-       | REST/JSON (Retrofit planned)
+       | REST/JSON (Retrofit)
        v
 Spring Boot backend (Java 17, Maven)
        |
@@ -248,7 +250,7 @@ Rules enforced by the backend (`400` unless noted):
 - The creator may record an expense someone else paid for. Payer, participants, and amount can be edited.
 - `createdAt` is set by the server and never changes; there is no date field in the request.
 - Only the creator can edit or delete (`403`). Non-members cannot view (`403`).
-- An expense with `settled = true` cannot be edited or deleted (`409`). Balances & Settlements should set `expenses.settled` when a settlement covers an expense and clear it when that settlement is deleted.
+- `settled` is an informational label only. The creator can still edit or delete a labeled expense; balances and summaries recalculate from the resulting expense data. A settlement is a separate repayment record and does not set this label.
 
 Responses include `payer`, `creator`, and `participants` as `{id, name, email}`, plus `createdAt`, `updatedAt`, `settled`, and `canEdit` (true when the current user may edit or delete).
 
@@ -264,7 +266,7 @@ cd backend && ./mvnw test -Dtest='ExpenseServiceTest,ExpenseRequestValidationTes
 ./test_expenses.sh
 ```
 
-On Android, a logged-in user taps **My Groups & Expenses**, picks a group, and opens `ExpenseListActivity`. A future group screen can open the same list with `ExpenseListActivity.EXTRA_GROUP_ID`.
+On Android, a logged-in user taps **My Groups & Expenses**, picks a group, and opens `ExpenseListActivity`. The **View group members** screen lists members and gives owners controls to add members, rename the group, or delete it.
 
 ## Expense splitting
 
@@ -281,7 +283,7 @@ Every expense is divided between its participants with one split method. The cre
 |---|---|
 | `EQUAL` (default) | Not used. The amount is divided as evenly as possible. |
 | `EXACT` | Dollars owed by each participant, keyed by user id. Must add up to `amount`. |
-| `PERCENTAGE` | Percent for each participant, keyed by user id. Must add up to exactly 100. |
+| `PERCENTAGE` | Percent for each participant, keyed by user id. Must add up to exactly 100; original values are retained when editing. |
 
 To show the shares before saving, call the preview endpoint. It uses the same rules as create and **saves nothing**. Group members only.
 
@@ -297,14 +299,14 @@ Rules enforced by the backend (`400`, with the reason in `{"error": ...}`):
 
 - Every share is at least $0.00 with at most 2 decimal places, and **the shares always add up to `amount`**. Nothing is saved otherwise.
 - `EXACT`: an amount for every participant (`0.00` is allowed). A blank, negative, or 3-decimal amount is rejected, and so is an amount for someone who is not in the expense.
-- `PERCENTAGE`: a percentage for every participant (`0` is allowed). A blank or negative percentage is rejected.
+- `PERCENTAGE`: a percentage for every participant (`0` is allowed). A blank, negative, or more-than-8-decimal percentage is rejected; the total must equal 100.
 - The payer must be one of the participants, and there must be at least 2 participants.
 - Rounding: shares are in whole cents. If the amount cannot be divided evenly (for example $10.00 three ways is $3.34, $3.33, $3.33), the leftover cents go to participants chosen pseudo-randomly. The choice depends only on the request, so the preview and the saved expense always match. Someone at 0% never receives a leftover cent.
 - Editing an expense recalculates its shares.
 
-Tables (migration `V3__create_expense_shares.sql`): `expenses.split_method` and `expense_shares` (one row per expense and participant). The migration gives expenses created before it an equal split. Percentages are not stored, only the resulting shares.
+Tables (migration `V3__create_expense_shares.sql`): `expenses.split_method` and `expense_shares` (one row per expense and participant). Migration `V5__settlement_notes_creators_and_split_values.sql` adds saved original percentage values so an expense can be reopened with its percentage split intact.
 
-The Android app does not send `splitMethod` or `splitValues` yet, so its expenses are saved as equal splits.
+The Android expense form supports all three split methods, previews each participant's share, and preserves the selected method and values when editing.
 
 Tests:
 
@@ -312,6 +314,25 @@ Tests:
 # Unit tests (no database needed)
 cd backend && ./mvnw test -Dtest='SplitCalculatorTest,SplitPreviewRequestValidationTest,ExpenseServiceTest'
 ```
+
+## Balances and settlements
+
+`GET /api/groups/{groupId}/balances` returns the signed pairwise balances and separate amounts owed/receivable for the authenticated member. `GET /api/groups/{groupId}/balances/suggestions` provides optional suggested transfers; it does not combine or change the underlying pairwise debts.
+
+Create a repayment made outside the app with `POST /api/groups/{groupId}/settlements`:
+
+```json
+{
+  "payerId": 2,
+  "payeeId": 1,
+  "amount": 5.00,
+  "note": "Cash repayment"
+}
+```
+
+The authenticated user must be one of those two members (the debtor or recipient). Both must belong to the group, the amount must be positive, have at most two decimal places, and not exceed the current debt between them. The note is optional. Only the user who recorded a settlement can edit or delete it. Deleting a settlement recalculates the pairwise balance.
+
+`settled` on an expense is an informational label and does not represent a payment. Marking an expense settled does not create a settlement or change balances. The creator can still edit or delete it; the balance is recalculated from the current expense data.
 
 ## History API
 
@@ -327,7 +348,7 @@ Every parameter is optional:
 
 | Parameter | Values | Effect |
 |---|---|---|
-| `q` | up to 100 characters | Case-insensitive search of expense titles and notes, and of settlement names (`"Bob paid Alice"`) |
+| `q` | up to 100 characters | Case-sensitive search of expense titles and notes, settlement notes, and settlement payer/recipient names |
 | `type` | `EXPENSE`, `SETTLEMENT`, `ALL` (default) | Only one kind of transaction |
 | `category` | `FOOD`, `HOUSING`, `TRANSPORTATION`, `ENTERTAINMENT`, `OTHER` | Expenses in that category. Settlements have no category, so they are hidden. |
 | `memberId` | a member's user id | Expenses the member paid for or took part in, and settlements they paid or received |
@@ -343,10 +364,12 @@ Response:
     { "type": "SETTLEMENT", "id": 7, "title": "Bob paid Alice", "amount": 5.00,
       "category": null, "payer": {"id": 2, "name": "Bob", "email": "..."},
       "payee": {"id": 1, "name": "Alice", "email": "..."}, "participantCount": 2,
-      "note": null, "createdAt": "2026-11-03T21:04:11.123456Z", "settled": false },
+      "participants": null, "note": null,
+      "createdAt": "2026-11-03T21:04:11.123456Z", "settled": false },
     { "type": "EXPENSE", "id": 12, "title": "Groceries", "amount": 30.00,
       "category": "FOOD", "payer": {"id": 1, "name": "Alice", "email": "..."},
-      "payee": null, "participantCount": 2, "note": null,
+      "payee": null, "participantCount": 2,
+      "participants": [{"id": 1, "name": "Alice", "email": "..."}, {"id": 2, "name": "Bob", "email": "..."}], "note": null,
       "createdAt": "2026-11-03T20:58:40.654321Z", "settled": false }
   ],
   "totalCount": 4,
@@ -383,8 +406,10 @@ GET /api/groups/{groupId}/summary/monthly?month=2026-11&timeZone=America/Los_Ang
 
 On a group's expense list, tap **History · Monthly summary**:
 
-- **History** shows expenses and settlements together, newest first. Search (it waits for a pause in typing), the Expenses/Settlements chips, the category, member and sort menus, and **Clear filters** all ask the server again. The list refreshes when you come back to it, so expenses or settlements changed on other screens show up. Tapping an expense opens its normal detail screen; tapping a settlement shows who paid whom, with a shortcut to the balances screen.
-- **Monthly summary** shows the month's group spending, number of expenses, your share, and a bar for each category. Use ‹ and › to change months; future months are disabled.
+- **History** shows expenses and settlements together, newest first, with their type, amount, involved members, and local `YYYY-MM-DD` date. Search is case-sensitive and includes settlement notes. Tapping an expense opens its detail screen; tapping a settlement shows its note and who paid whom.
+- **Monthly summary** shows the month's group spending, number of expenses, your share, and a bar chart for spending by category. Use ‹ and › to change months; future months are disabled.
+- Group owners can use the trash button to remove a member. Non-owner members can leave through the member list after settling any unpaid balance. The group owner can delete the group if it is no longer needed.
+- Expense creators can attach one JPEG, PNG, or WebP receipt photo up to 5 MB, then open it from the expense detail screen. Custom category labels can be entered on the expense form and appear in history and category charts.
 
 ### Tests
 
@@ -443,7 +468,7 @@ Run `docker compose logs --tail=100 db`. Check `.env`, available disk space, and
 Find and stop the conflicting service, or deliberately change the published host port in `compose.yaml` and update the client base URL.
 
 **`curl` returns 401/403**  
-Check `SecurityConfig.java`: only explicitly permitted health endpoints should be unauthenticated. Other routes require the planned authentication configuration.
+Check `SecurityConfig.java`: only explicitly permitted health endpoints should be unauthenticated. Other API routes require a valid JWT.
 
 **Android emulator cannot reach backend**  
 Verify the backend works from the host first, then use `10.0.2.2` rather than `localhost` in the emulator. Check Android Internet permission and debug cleartext HTTP configuration.

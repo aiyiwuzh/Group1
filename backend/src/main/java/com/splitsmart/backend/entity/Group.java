@@ -42,4 +42,5 @@ public class Group {
     public void setDescription(String description) {
         this.description = description;
     }
+
 }

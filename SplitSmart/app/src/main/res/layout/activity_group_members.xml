@@ -49,6 +49,15 @@
         android:layout_marginTop="4dp"
         android:layout_marginBottom="16dp" />
 
+    <TextView
+        android:id="@+id/tvMembersOwner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        android:layout_marginTop="-10dp"
+        android:layout_marginBottom="14dp" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAddMember"
         android:layout_width="match_parent"
@@ -60,7 +69,54 @@
         android:textColor="@color/white"
         app:backgroundTint="@color/brand_teal"
         app:cornerRadius="16dp"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="10dp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/layoutOwnerActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:layout_marginBottom="12dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRenameGroup"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Edit group"
+            android:textAllCaps="false"
+            android:textColor="@color/brand_ink"
+            app:strokeColor="@color/card_outline"
+            app:cornerRadius="14dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDeleteGroup"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:text="Delete group"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            app:backgroundTint="@color/error"
+            app:cornerRadius="14dp" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnLeaveGroup"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Leave group"
+        android:textAllCaps="false"
+        android:textColor="@color/error"
+        app:strokeColor="@color/error"
+        app:cornerRadius="14dp"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/tvMembersError"

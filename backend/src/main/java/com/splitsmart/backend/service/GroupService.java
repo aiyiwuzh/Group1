@@ -8,6 +8,7 @@ import com.splitsmart.backend.entity.User;
 import com.splitsmart.backend.repository.GroupRepository;
 import com.splitsmart.backend.repository.MembershipRepository;
 import com.splitsmart.backend.repository.UserRepository;
+import com.splitsmart.backend.service.BalanceService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,15 +24,18 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final MembershipRepository membershipRepository;
     private final UserRepository userRepository;
+    private final BalanceService balanceService;
 
     public GroupService(
             GroupRepository groupRepository,
             MembershipRepository membershipRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            BalanceService balanceService) {
 
         this.groupRepository = groupRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
+        this.balanceService = balanceService;
     }
 
     private User requireUser(Long userId) {
@@ -130,6 +134,41 @@ public class GroupService {
         membershipRepository.save(new Membership(group, newMember));
 
         return toResponse(group);
+    }
+
+    @Transactional
+    public void removeMember(Long userId, Long groupId, Long memberId) {
+        Group group = requireGroup(groupId);
+        requireOwner(group, userId);
+        if (memberId.equals(group.getOwner().getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The group owner cannot be removed as a member");
+        }
+        removeMembershipIfSafe(groupId, memberId);
+    }
+
+    @Transactional
+    public void leaveGroup(Long userId, Long groupId) {
+        Group group = requireGroup(groupId);
+        requireMember(groupId, userId);
+        if (group.getOwner().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "The group owner cannot leave. Delete the group if it is no longer needed.");
+        }
+        removeMembershipIfSafe(groupId, userId);
+    }
+
+    private void removeMembershipIfSafe(Long groupId, Long memberId) {
+        if (!membershipRepository.existsByGroupIdAndUserId(groupId, memberId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Group member not found");
+        }
+        if (balanceService.hasOutstandingBalance(groupId, memberId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This member has an unpaid balance. Record the settlement before changing membership.");
+        }
+        membershipRepository.deleteById(new com.splitsmart.backend.entity.MembershipId(
+                groupId, memberId));
     }
 
     @Transactional

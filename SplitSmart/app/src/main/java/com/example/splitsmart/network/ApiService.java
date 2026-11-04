@@ -2,6 +2,8 @@
 package com.example.splitsmart.network;
 
 import com.example.splitsmart.model.CurrentUser;
+import com.example.splitsmart.model.ProfileUpdateRequest;
+import com.example.splitsmart.model.UpdateGroupRequest;
 import com.example.splitsmart.model.CreateGroupRequest;
 import com.example.splitsmart.model.BalanceSummary;
 import com.example.splitsmart.model.AddMemberRequest;
@@ -31,6 +33,10 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
+import retrofit2.http.Multipart;
+import retrofit2.http.Part;
+import okhttp3.MultipartBody;
+import okhttp3.ResponseBody;
 
 public interface ApiService {
 
@@ -46,6 +52,11 @@ public interface ApiService {
     @GET("api/auth/me")
     Call<CurrentUser> getCurrentUser(@Header("Authorization") String auth);
 
+    @PUT("api/auth/me")
+    Call<CurrentUser> updateCurrentUser(
+            @Header("Authorization") String auth,
+            @Body ProfileUpdateRequest request);
+
     @GET("api/groups")
     Call<List<Group>> getMyGroups(@Header("Authorization") String auth);
 
@@ -60,8 +71,27 @@ public interface ApiService {
             @Path("groupId") long groupId,
             @Body AddMemberRequest request);
 
+    @DELETE("api/groups/{groupId}/members/{memberId}")
+    Call<Void> removeGroupMember(@Header("Authorization") String auth,
+            @Path("groupId") long groupId, @Path("memberId") long memberId);
+
+    @POST("api/groups/{groupId}/leave")
+    Call<Void> leaveGroup(@Header("Authorization") String auth,
+            @Path("groupId") long groupId);
+
     @GET("api/groups/{groupId}")
     Call<Group> getGroup(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId);
+
+    @PUT("api/groups/{groupId}")
+    Call<Group> updateGroup(
+            @Header("Authorization") String auth,
+            @Path("groupId") long groupId,
+            @Body UpdateGroupRequest request);
+
+    @DELETE("api/groups/{groupId}")
+    Call<Void> deleteGroup(
             @Header("Authorization") String auth,
             @Path("groupId") long groupId);
 
@@ -103,6 +133,15 @@ public interface ApiService {
     @DELETE("api/expenses/{id}")
     Call<Void> deleteExpense(
             @Header("Authorization") String auth,
+            @Path("id") long expenseId);
+
+    @Multipart
+    @POST("api/expenses/{id}/receipt")
+    Call<Void> uploadReceipt(@Header("Authorization") String auth,
+            @Path("id") long expenseId, @Part MultipartBody.Part file);
+
+    @GET("api/expenses/{id}/receipt")
+    Call<ResponseBody> getReceipt(@Header("Authorization") String auth,
             @Path("id") long expenseId);
 
     // Balances and settlements
