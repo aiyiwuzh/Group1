@@ -12,7 +12,8 @@ The Android starter project and the Docker-based Spring Boot + MySQL development
 - **Accounts & Groups (Section 1):** registration, login/logout, and group APIs are implemented; Android has login and registration screens.
 - **Expense Management (Section 2):** expense create/view/edit/delete is implemented in the backend and Android app. See [Expense API](#expense-api).
 - **Expense Splitting (Section 3):** equal, exact-amount, and percentage splits are implemented in the backend, with a share preview endpoint. The Android screens do not use them yet. See [Expense splitting](#expense-splitting).
-- Balances, settlements, and history are planned features; **do not assume they are implemented yet**.
+- **Balances & Settlements (Section 4):** pairwise balances, owed/receivable totals, suggested payments, and settlement create/edit/delete are implemented in the backend and Android app.
+- **History & Monthly Summary (Section 5):** a searchable, filterable history of expenses and settlements and a monthly spending summary are implemented in the backend and Android app. See [History API](#history-api).
 
 ## Architecture
 
@@ -310,6 +311,92 @@ Tests:
 ```bash
 # Unit tests (no database needed)
 cd backend && ./mvnw test -Dtest='SplitCalculatorTest,SplitPreviewRequestValidationTest,ExpenseServiceTest'
+```
+
+## History API
+
+Both endpoints require `Authorization: Bearer <token>` and are for group members only (`403` otherwise, `404` if the group does not exist). Errors return `{"error": "message"}`. There is no history table: these read the same `expenses`, `expense_shares` and `settlements` rows the other features write, so edits appear right away and deleted items are gone.
+
+### Transaction history
+
+```text
+GET /api/groups/{groupId}/history?q=&type=&category=&memberId=&sort=
+```
+
+Every parameter is optional:
+
+| Parameter | Values | Effect |
+|---|---|---|
+| `q` | up to 100 characters | Case-insensitive search of expense titles and notes, and of settlement names (`"Bob paid Alice"`) |
+| `type` | `EXPENSE`, `SETTLEMENT`, `ALL` (default) | Only one kind of transaction |
+| `category` | `FOOD`, `HOUSING`, `TRANSPORTATION`, `ENTERTAINMENT`, `OTHER` | Expenses in that category. Settlements have no category, so they are hidden. |
+| `memberId` | a member's user id | Expenses the member paid for or took part in, and settlements they paid or received |
+| `sort` | `NEWEST` (default), `OLDEST`, `AMOUNT_HIGH`, `AMOUNT_LOW` | Order of the list. Ties are ordered by type and id so the list never reshuffles. |
+
+An unknown `type`, `category` or `sort`, or a `memberId` who is not in the group, returns `400`.
+
+Response:
+
+```json
+{
+  "items": [
+    { "type": "SETTLEMENT", "id": 7, "title": "Bob paid Alice", "amount": 5.00,
+      "category": null, "payer": {"id": 2, "name": "Bob", "email": "..."},
+      "payee": {"id": 1, "name": "Alice", "email": "..."}, "participantCount": 2,
+      "note": null, "createdAt": "2026-11-03T21:04:11.123456Z", "settled": false },
+    { "type": "EXPENSE", "id": 12, "title": "Groceries", "amount": 30.00,
+      "category": "FOOD", "payer": {"id": 1, "name": "Alice", "email": "..."},
+      "payee": null, "participantCount": 2, "note": null,
+      "createdAt": "2026-11-03T20:58:40.654321Z", "settled": false }
+  ],
+  "totalCount": 4,
+  "members": [{"id": 1, "name": "Alice", "email": "..."}, {"id": 2, "name": "Bob", "email": "..."}]
+}
+```
+
+`totalCount` is the number of transactions in the group before filtering, so the app can tell "no transactions yet" from "nothing matches". `members` (sorted by name) fills the member filter.
+
+### Monthly summary
+
+```text
+GET /api/groups/{groupId}/summary/monthly?month=2026-11&timeZone=America/Los_Angeles
+```
+
+- `month` is `YYYY-MM` and defaults to the current month.
+- `timeZone` is an IANA id. It decides where the month starts and ends, and defaults to `America/Los_Angeles`. The Android app sends the phone's time zone.
+- Expenses count toward the month of their `createdAt`. **Settlements are not counted**: they repay existing expenses rather than adding spending.
+
+```json
+{
+  "month": "2026-11", "timeZone": "America/Los_Angeles",
+  "expenseCount": 2, "totalSpending": 70.00, "yourShare": 15.00,
+  "categories": [
+    {"category": "ENTERTAINMENT", "expenseCount": 1, "total": 40.00},
+    {"category": "FOOD", "expenseCount": 1, "total": 30.00}
+  ]
+}
+```
+
+`yourShare` adds up the current user's shares of those expenses. `categories` lists only categories with spending, largest first. All amounts are exact decimals.
+
+### Android
+
+On a group's expense list, tap **History · Monthly summary**:
+
+- **History** shows expenses and settlements together, newest first. Search (it waits for a pause in typing), the Expenses/Settlements chips, the category, member and sort menus, and **Clear filters** all ask the server again. The list refreshes when you come back to it, so expenses or settlements changed on other screens show up. Tapping an expense opens its normal detail screen; tapping a settlement shows who paid whom, with a shortcut to the balances screen.
+- **Monthly summary** shows the month's group spending, number of expenses, your share, and a bar for each category. Use ‹ and › to change months; future months are disabled.
+
+### Tests
+
+```bash
+# Unit tests (no database needed)
+cd backend && ./mvnw test -Dtest='HistoryServiceTest'
+
+# End-to-end API tests (backend must be running)
+./test_history.sh
+
+# Android unit tests (from SplitSmart/)
+./gradlew :app:testDebugUnitTest --tests '*HistoryFiltersTest'
 ```
 
 ## Team workflow and commits
