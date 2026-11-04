@@ -17,11 +17,18 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.splitsmart.model.BalanceSummary;
 import com.example.splitsmart.model.PairwiseBalance;
 import com.example.splitsmart.model.Settlement;
+import com.example.splitsmart.model.SuggestedPayment;
+import com.example.splitsmart.network.RetrofitClient;
 import com.example.splitsmart.viewmodel.BalanceViewModel;
 import com.example.splitsmart.viewmodel.SettlementViewModel;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.ArrayList;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class BalanceActivity extends AppCompatActivity {
 
@@ -40,6 +47,8 @@ public class BalanceActivity extends AppCompatActivity {
     private TextView noSettlements;
     private LinearLayout balanceRows;
     private LinearLayout settlementRows;
+    private LinearLayout suggestedPaymentRows;
+    private TextView noSuggestions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +73,8 @@ public class BalanceActivity extends AppCompatActivity {
         noSettlements = findViewById(R.id.tvNoSettlements);
         balanceRows = findViewById(R.id.layoutBalanceRows);
         settlementRows = findViewById(R.id.layoutSettlementRows);
+        suggestedPaymentRows = findViewById(R.id.layoutSuggestedPayments);
+        noSuggestions = findViewById(R.id.tvNoSuggestions);
 
         findViewById(R.id.btnBalanceBack).setOnClickListener(v -> finish());
 
@@ -92,6 +103,40 @@ public class BalanceActivity extends AppCompatActivity {
     private void loadData() {
         balanceViewModel.loadBalances(auth, groupId);
         settlementViewModel.loadSettlements(auth, groupId);
+        RetrofitClient.getApiService().getSuggestedPayments(auth, groupId)
+                .enqueue(new Callback<List<SuggestedPayment>>() {
+                    @Override public void onResponse(Call<List<SuggestedPayment>> call,
+                                                     Response<List<SuggestedPayment>> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            renderSuggestedPayments(response.body());
+                        } else {
+                            showMessage(balanceError, ExpenseUtils.errorMessage(
+                                    response, "Could not load the suggested payment plan"));
+                        }
+                    }
+                    @Override public void onFailure(Call<List<SuggestedPayment>> call, Throwable t) {
+                        showMessage(balanceError, "Cannot load suggested payments. Check your connection.");
+                    }
+                });
+    }
+
+    private void renderSuggestedPayments(List<SuggestedPayment> suggestions) {
+        suggestedPaymentRows.removeAllViews();
+        noSuggestions.setVisibility(suggestions.isEmpty() ? View.VISIBLE : View.GONE);
+        for (SuggestedPayment suggestion : suggestions) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.VERTICAL);
+            row.setPadding(dp(16), dp(14), dp(16), dp(14));
+            row.setBackground(cardBackground(row));
+            TextView description = new TextView(this);
+            description.setText(suggestion.getPayerName() + " pays "
+                    + suggestion.getPayeeName() + " "
+                    + ExpenseUtils.formatMoney(suggestion.getAmount()));
+            description.setTextSize(16);
+            description.setTextColor(0xFF17212B);
+            row.addView(description);
+            addCardRow(suggestedPaymentRows, row);
+        }
     }
 
     private void renderBalances(BalanceSummary summary) {

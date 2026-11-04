@@ -70,6 +70,39 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:text="Simplify payments"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/ink"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="A suggested plan that can reduce the number of payments. Record real payments separately."
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvNoSuggestions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No payments are needed right now."
+                android:textColor="@color/text_secondary"
+                android:visibility="gone"
+                android:padding="8dp" />
+
+            <LinearLayout
+                android:id="@+id/layoutSuggestedPayments"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:text="Balances with group members"
                 android:textSize="18sp"
                 android:textStyle="bold"

@@ -3,6 +3,7 @@ package com.splitsmart.backend.service;
 import com.splitsmart.backend.dto.BalanceSummaryResponse;
 import com.splitsmart.backend.dto.MemberResponse;
 import com.splitsmart.backend.dto.PairwiseBalanceResponse;
+import com.splitsmart.backend.dto.SuggestedPaymentResponse;
 import com.splitsmart.backend.entity.Expense;
 import com.splitsmart.backend.entity.Membership;
 import com.splitsmart.backend.entity.Settlement;
@@ -49,6 +50,16 @@ public class BalanceService {
             return first < second
                     ? new PairKey(first, second)
                     : new PairKey(second, first);
+        }
+    }
+
+    private static final class Position {
+        private final User user;
+        private BigDecimal amount;
+
+        private Position(User user, BigDecimal amount) {
+            this.user = user;
+            this.amount = amount;
         }
     }
 
@@ -111,6 +122,73 @@ public class BalanceService {
         return new BalanceSummaryResponse(
                 groupId, userId, totalOwed.setScale(2),
                 totalReceivable.setScale(2), List.copyOf(balances));
+    }
+
+    /**
+     * Nets all pairwise group debts and matches debtors with creditors to
+     * suggest a shorter set of transfers. This is a recommendation only;
+     * payments still happen outside the app and are recorded separately.
+     */
+    @Transactional(readOnly = true)
+    public List<SuggestedPaymentResponse> getSuggestedPayments(
+            Long userId, Long groupId) {
+        requireGroup(groupId);
+        requireMember(groupId, userId);
+
+        Map<PairKey, BigDecimal> pairDebts = calculateNetDebts(groupId, null);
+        Map<Long, BigDecimal> positions = new HashMap<>();
+        List<User> members = membershipRepository.findByGroupId(groupId)
+                .stream()
+                .map(Membership::getUser)
+                .sorted(Comparator.comparing(User::getName,
+                        String.CASE_INSENSITIVE_ORDER))
+                .toList();
+
+        for (User member : members) {
+            positions.put(member.getId(), ZERO);
+        }
+
+        // Positive pair values mean the lower id owes the higher id.
+        for (Map.Entry<PairKey, BigDecimal> entry : pairDebts.entrySet()) {
+            PairKey pair = entry.getKey();
+            BigDecimal lowerOwesHigher = entry.getValue();
+            positions.merge(pair.lowerId(), lowerOwesHigher.negate(), BigDecimal::add);
+            positions.merge(pair.higherId(), lowerOwesHigher, BigDecimal::add);
+        }
+
+        List<Position> debtors = new ArrayList<>();
+        List<Position> creditors = new ArrayList<>();
+        for (User member : members) {
+            BigDecimal net = positions.getOrDefault(member.getId(), ZERO)
+                    .setScale(2);
+            if (net.compareTo(ZERO) < 0) {
+                debtors.add(new Position(member, net.negate()));
+            } else if (net.compareTo(ZERO) > 0) {
+                creditors.add(new Position(member, net));
+            }
+        }
+
+        List<SuggestedPaymentResponse> suggestions = new ArrayList<>();
+        int debtorIndex = 0;
+        int creditorIndex = 0;
+        while (debtorIndex < debtors.size() && creditorIndex < creditors.size()) {
+            Position debtor = debtors.get(debtorIndex);
+            Position creditor = creditors.get(creditorIndex);
+            BigDecimal payment = debtor.amount.min(creditor.amount).setScale(2);
+
+            if (payment.compareTo(ZERO) > 0) {
+                suggestions.add(new SuggestedPaymentResponse(
+                        debtor.user.getId(), debtor.user.getName(),
+                        creditor.user.getId(), creditor.user.getName(), payment));
+            }
+
+            debtor.amount = debtor.amount.subtract(payment).setScale(2);
+            creditor.amount = creditor.amount.subtract(payment).setScale(2);
+            if (debtor.amount.compareTo(ZERO) == 0) debtorIndex++;
+            if (creditor.amount.compareTo(ZERO) == 0) creditorIndex++;
+        }
+
+        return List.copyOf(suggestions);
     }
 
     // Returns the positive amount debtor currently owes creditor. Reciprocal
