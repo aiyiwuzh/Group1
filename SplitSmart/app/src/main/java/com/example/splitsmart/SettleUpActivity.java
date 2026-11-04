@@ -22,16 +22,21 @@ public class SettleUpActivity extends AppCompatActivity {
     public static final String EXTRA_GROUP_NAME = "group_name";
     public static final String EXTRA_PAYEE_ID = "payee_id";
     public static final String EXTRA_PAYEE_NAME = "payee_name";
+    public static final String EXTRA_PAYER_ID = "payer_id";
+    public static final String EXTRA_PAYER_NAME = "payer_name";
     public static final String EXTRA_MAX_AMOUNT = "max_amount";
     public static final String EXTRA_SETTLEMENT_ID = "settlement_id";
     public static final String EXTRA_AMOUNT = "amount";
+    public static final String EXTRA_NOTE = "note";
 
     private long groupId;
     private long payeeId;
+    private long payerId;
     private long settlementId;
     private BigDecimal maxAmount;
     private String auth;
     private EditText amountInput;
+    private EditText noteInput;
     private TextView errorText;
     private SettlementViewModel viewModel;
 
@@ -42,22 +47,25 @@ public class SettleUpActivity extends AppCompatActivity {
 
         groupId = getIntent().getLongExtra(EXTRA_GROUP_ID, -1);
         payeeId = getIntent().getLongExtra(EXTRA_PAYEE_ID, -1);
+        payerId = getIntent().getLongExtra(EXTRA_PAYER_ID, -1);
         settlementId = getIntent().getLongExtra(EXTRA_SETTLEMENT_ID, -1);
         auth = ExpenseUtils.requireAuth(this);
         if (auth == null) return;
-        if (groupId <= 0 || payeeId <= 0) {
+        if (groupId <= 0 || payeeId <= 0 || payerId <= 0) {
             finish();
             return;
         }
 
         String groupName = getIntent().getStringExtra(EXTRA_GROUP_NAME);
         String payeeName = getIntent().getStringExtra(EXTRA_PAYEE_NAME);
+        String payerName = getIntent().getStringExtra(EXTRA_PAYER_NAME);
         boolean editing = settlementId > 0;
         ((TextView) findViewById(R.id.tvSettlementTitle)).setText(
                 editing ? "Edit settlement" : "Record a payment");
         ((TextView) findViewById(R.id.tvSettlementPayee)).setText(
                 "Group: " + (groupName == null ? "SplitSmart" : groupName)
-                        + "\nPayee: " + (payeeName == null ? "member" : payeeName));
+                        + "\nFrom: " + (payerName == null ? "member" : payerName)
+                        + "\nTo: " + (payeeName == null ? "member" : payeeName));
 
         String maxText = getIntent().getStringExtra(EXTRA_MAX_AMOUNT);
         TextView maximumText = findViewById(R.id.tvSettlementMaximum);
@@ -72,7 +80,7 @@ public class SettleUpActivity extends AppCompatActivity {
         } else if (editing) {
             maximumText.setText("The updated amount will be checked against the current debt.");
         } else {
-            maximumText.setText("The amount must not exceed your current debt to this member.");
+            maximumText.setText("The amount must not exceed the current debt between these members.");
         }
 
         amountInput = findViewById(R.id.etSettlementAmount);
@@ -84,6 +92,9 @@ public class SettleUpActivity extends AppCompatActivity {
         } else if (maxAmount != null) {
             amountInput.setText(maxAmount.toPlainString());
         }
+        noteInput = findViewById(R.id.etSettlementNote);
+        String initialNote = getIntent().getStringExtra(EXTRA_NOTE);
+        if (initialNote != null) noteInput.setText(initialNote);
 
         errorText = findViewById(R.id.tvSettlementError);
         Button saveButton = findViewById(R.id.btnSaveSettlement);
@@ -135,7 +146,9 @@ public class SettleUpActivity extends AppCompatActivity {
         }
 
         errorText.setVisibility(View.GONE);
-        SettlementRequest request = new SettlementRequest(payeeId, amount);
+        String note = noteInput.getText().toString().trim();
+        SettlementRequest request = new SettlementRequest(
+                payerId, payeeId, amount, note.isEmpty() ? null : note);
         if (settlementId > 0) {
             viewModel.updateSettlement(auth, settlementId, request);
         } else {

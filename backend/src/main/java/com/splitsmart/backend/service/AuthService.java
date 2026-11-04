@@ -125,4 +125,11 @@ public class AuthService {
         return userRepository.save(user);
     }
 
+    @Transactional(readOnly = true)
+    public User getProfile(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        NOT_FOUND, "User not found"));
+    }
+
 }

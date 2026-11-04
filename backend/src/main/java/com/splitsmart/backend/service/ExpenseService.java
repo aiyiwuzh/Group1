@@ -82,7 +82,8 @@ public class ExpenseService {
         }
     }
 
-    // Only the creator can edit or delete; settled expenses are locked.
+    // Policy: creators may always edit or delete. The settled flag is
+    // informational, and any change recalculates balances.
     private void requireEditable(Expense expense, Long userId) {
         if (!expense.getCreator().getId().equals(userId)) {
             throw new ResponseStatusException(
@@ -90,11 +91,6 @@ public class ExpenseService {
                     "Only the expense creator can edit or delete this expense");
         }
 
-        if (expense.isSettled()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "This expense is marked as settled and cannot be changed");
-        }
     }
 
     private static ResponseStatusException badRequest(String message) {
@@ -181,13 +177,24 @@ public class ExpenseService {
 
         expense.setTitle(request.title().trim());
         expense.setAmount(amount);
-        expense.setCategory(request.category() == null
-                ? ExpenseCategory.OTHER : request.category());
+        expense.setCategory(normalizeCategory(request.category()));
         expense.setPayer(split.payer());
         expense.setParticipants(split.participants());
         expense.setSplitMethod(split.splitMethod());
         expense.setShares(split.shares());
+        expense.setSplitValues(split.splitMethod() == SplitMethod.PERCENTAGE
+                ? request.splitValues() : Map.of());
         expense.setNote(note == null || note.isEmpty() ? null : note);
+    }
+
+    private String normalizeCategory(String requested) {
+        if (requested == null || requested.isBlank()) return "OTHER";
+        String value = requested.trim();
+        if (value.length() > 50) throw badRequest("Category cannot exceed 50 characters");
+        for (ExpenseCategory standard : ExpenseCategory.values()) {
+            if (standard.name().equalsIgnoreCase(value)) return standard.name();
+        }
+        return value;
     }
 
     private static MemberResponse toMember(User user) {
@@ -220,8 +227,7 @@ public class ExpenseService {
                 .map(ExpenseService::toMember)
                 .toList();
 
-        boolean canEdit = expense.getCreator().getId().equals(userId)
-                && !expense.isSettled();
+        boolean canEdit = expense.getCreator().getId().equals(userId);
 
         return new ExpenseResponse(
                 expense.getId(),
@@ -235,6 +241,7 @@ public class ExpenseService {
                 expense.getSplitMethod(),
                 toShares(expense.getShares(), expense.getParticipants(),
                         expense.getPayer().getId()),
+                Map.copyOf(expense.getSplitValues()),
                 expense.getNote(),
                 expense.getCreatedAt(),
                 expense.getUpdatedAt(),

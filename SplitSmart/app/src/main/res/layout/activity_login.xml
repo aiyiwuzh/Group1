@@ -120,6 +120,19 @@
                     app:cornerRadius="16dp"
                     android:layout_marginTop="22dp" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRecentAccounts"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="Use a recent account"
+                    android:textAllCaps="false"
+                    android:textColor="@color/brand_ink"
+                    app:strokeColor="@color/card_outline"
+                    app:cornerRadius="14dp"
+                    android:layout_marginTop="10dp"
+                    android:visibility="gone" />
+
                 <TextView
                     android:id="@+id/tvLoginError"
                     android:layout_width="match_parent"

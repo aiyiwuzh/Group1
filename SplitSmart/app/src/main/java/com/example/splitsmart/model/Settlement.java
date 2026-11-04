@@ -9,6 +9,7 @@ public class Settlement {
     private Member payer;
     private Member payee;
     private BigDecimal amount;
+    private String note;
     private String createdAt;
     private String updatedAt;
     private boolean canEdit;
@@ -18,6 +19,7 @@ public class Settlement {
     public Member getPayer() { return payer; }
     public Member getPayee() { return payee; }
     public BigDecimal getAmount() { return amount; }
+    public String getNote() { return note; }
     public String getCreatedAt() { return createdAt; }
     public String getUpdatedAt() { return updatedAt; }
     public boolean canEdit() { return canEdit; }

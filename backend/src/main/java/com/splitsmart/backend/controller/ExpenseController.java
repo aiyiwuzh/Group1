@@ -6,6 +6,8 @@ import com.splitsmart.backend.dto.ExpenseResponse;
 import com.splitsmart.backend.dto.SharePreviewResponse;
 import com.splitsmart.backend.dto.SplitPreviewRequest;
 import com.splitsmart.backend.service.ExpenseService;
+import com.splitsmart.backend.service.ExpenseReceiptService;
+import com.splitsmart.backend.entity.ExpenseReceipt;
 
 import jakarta.validation.Valid;
 
@@ -14,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 
@@ -22,9 +26,12 @@ import java.util.List;
 public class ExpenseController {
 
     private final ExpenseService expenseService;
+    private final ExpenseReceiptService receiptService;
 
-    public ExpenseController(ExpenseService expenseService) {
+    public ExpenseController(ExpenseService expenseService,
+                             ExpenseReceiptService receiptService) {
         this.expenseService = expenseService;
+        this.receiptService = receiptService;
     }
 
     private Long currentUserId(Jwt jwt) {
@@ -94,5 +101,22 @@ public class ExpenseController {
         expenseService.deleteExpense(currentUserId(jwt), id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/expenses/{id}/receipt", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> uploadReceipt(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id,
+            @RequestPart("file") MultipartFile file) throws java.io.IOException {
+        receiptService.save(currentUserId(jwt), id, file.getContentType(), file.getBytes());
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/expenses/{id}/receipt")
+    public ResponseEntity<byte[]> getReceipt(
+            @AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        ExpenseReceipt receipt = receiptService.get(currentUserId(jwt), id);
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(receipt.getContentType()))
+                .body(receipt.getImageData());
     }
 }

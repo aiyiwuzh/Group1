@@ -1,7 +1,6 @@
 
 package com.splitsmart.backend.dto;
 
-import com.splitsmart.backend.entity.ExpenseCategory;
 import com.splitsmart.backend.entity.SplitMethod;
 
 import jakarta.validation.constraints.Digits;
@@ -28,8 +27,9 @@ public record ExpenseRequest(
                 message = "Amount can have at most 2 decimal places")
         BigDecimal amount,
 
-        // Optional; defaults to OTHER
-        ExpenseCategory category,
+        // A standard category value or a custom label (up to 50 characters).
+        @Size(max = 50, message = "Category cannot exceed 50 characters")
+        String category,
 
         @NotNull(message = "Payer is required")
         Long payerId,

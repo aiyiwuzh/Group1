@@ -1,6 +1,7 @@
 package com.example.splitsmart.model;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 // One row of a group's history: an expense or a settlement.
 public class HistoryItem {
@@ -18,6 +19,7 @@ public class HistoryItem {
     // Null for expenses
     private Member payee;
     private int participantCount;
+    private List<Member> participants;
     private String note;
     private String createdAt;
     private boolean settled;
@@ -30,6 +32,7 @@ public class HistoryItem {
     public Member getPayer() { return payer; }
     public Member getPayee() { return payee; }
     public int getParticipantCount() { return participantCount; }
+    public List<Member> getParticipants() { return participants; }
     public String getNote() { return note; }
     public String getCreatedAt() { return createdAt; }
     public boolean isSettled() { return settled; }

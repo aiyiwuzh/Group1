@@ -122,7 +122,7 @@ class ExpenseServiceTest {
         ReflectionTestUtils.setField(expense, "id", 100L);
         expense.setTitle("Rent");
         expense.setAmount(new BigDecimal("900.00"));
-        expense.setCategory(ExpenseCategory.HOUSING);
+        expense.setCategory(ExpenseCategory.HOUSING.name());
         expense.setPayer(creator);
         expense.setParticipants(java.util.Set.of(alice, bob));
         expense.setSettled(settled);
@@ -142,7 +142,7 @@ class ExpenseServiceTest {
                 1L, 10L, request("12.5", 1L, List.of(1L, 2L)));
 
         assertEquals(new BigDecimal("12.50"), response.amount());
-        assertEquals(ExpenseCategory.OTHER, response.category());
+        assertEquals("OTHER", response.category());
         assertNull(response.note());
         assertEquals(1L, response.creator().id());
         assertEquals(2, response.participants().size());
@@ -219,15 +219,16 @@ class ExpenseServiceTest {
     }
 
     @Test
-    void settledExpenseIsLocked() {
+    void settledExpenseCanStillBeChangedUnderInformationalLabelPolicy() {
         existingExpense(alice, true);
 
-        assertFalse(expenseService.getExpense(1L, 100L).canEdit());
-        assertStatus(HttpStatus.CONFLICT, () -> expenseService.updateExpense(
-                1L, 100L, request("10.00", 1L, List.of(1L, 2L))));
-        assertStatus(HttpStatus.CONFLICT,
-                () -> expenseService.deleteExpense(1L, 100L));
-        verify(expenseRepository, never()).delete(any());
+        assertTrue(expenseService.getExpense(1L, 100L).canEdit());
+        ExpenseResponse updated = expenseService.updateExpense(
+                1L, 100L, request("10.00", 1L, List.of(1L, 2L)));
+        assertTrue(updated.settled());
+        assertEquals(new BigDecimal("10.00"), updated.amount());
+        expenseService.deleteExpense(1L, 100L);
+        verify(expenseRepository).delete(any());
     }
 
     @Test

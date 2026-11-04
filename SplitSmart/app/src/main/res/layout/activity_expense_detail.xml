@@ -45,7 +45,7 @@
             android:id="@+id/tvDetailLocked"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="This expense is marked settled, so it can't be edited or deleted."
+            android:text="Marked settled. This is a label only; edits and balance recalculation remain available."
             android:textSize="14sp"
             android:textColor="#81530B"
             android:background="@drawable/bg_warning_card"
@@ -78,6 +78,22 @@
             style="@style/ExpenseDetailValue" />
 
         <TextView
+            style="@style/ExpenseFieldLabel"
+            android:text="Split method" />
+
+        <TextView
+            android:id="@+id/tvDetailSplitMethod"
+            style="@style/ExpenseDetailValue" />
+
+        <TextView
+            style="@style/ExpenseFieldLabel"
+            android:text="Shares" />
+
+        <TextView
+            android:id="@+id/tvDetailShares"
+            style="@style/ExpenseDetailValue" />
+
+        <TextView
             android:id="@+id/tvDetailNoteLabel"
             style="@style/ExpenseFieldLabel"
             android:text="Note" />
@@ -93,6 +109,18 @@
         <TextView
             android:id="@+id/tvDetailCreated"
             style="@style/ExpenseDetailValue" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewReceipt"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="View receipt photo"
+            android:textAllCaps="false"
+            android:textColor="@color/brand_ink"
+            app:strokeColor="@color/card_outline"
+            app:cornerRadius="14dp"
+            android:layout_marginTop="8dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMarkSettledExpense"

@@ -96,8 +96,8 @@ CREATED_AT=$(echo "$BODY" | sed -n 's/.*"createdAt":"\([^"]*\)".*/\1/p')
 check_body "Amount stored with 2 decimals" '"amount":42.50'
 
 call POST "/groups/$GROUP/expenses" "$ALICE_TOKEN" \
-    "$(expense "Uber" 18 "$BOB" "$ALICE,$BOB")"
-check "Create expense paid by someone else" 201
+    "$(expense "Uber" 18 "$BOB" "$BOB,$CAROL")"
+check "Creator records another payer without participating" 201
 check_body "Category defaults to OTHER" '"category":"OTHER"'
 
 call POST "/groups/$GROUP/expenses" "$ALICE_TOKEN" "$(expense "Zero" 0 "$ALICE" "$ALICE,$BOB")"
@@ -121,9 +121,6 @@ check "Non-member payer rejected" 400
 
 call POST "/groups/$GROUP/expenses" "$ALICE_TOKEN" "$(expense "Outside" 10 "$ALICE" "$ALICE,$OUT")"
 check "Non-member participant rejected" 400
-
-call POST "/groups/$GROUP/expenses" "$ALICE_TOKEN" "$(expense "Bad" 10 "$ALICE" "$ALICE,$BOB" PETS)"
-check "Unknown category rejected" 400
 
 call POST "/groups/$GROUP/expenses" "$ALICE_TOKEN" "$(expense "   " 10 "$ALICE" "$ALICE,$BOB")"
 check "Blank title rejected" 400
@@ -174,6 +171,10 @@ check "Creator deletes expense" 204
 
 call GET "/expenses/$EXPENSE" "$ALICE_TOKEN"
 check "Deleted expense is gone" 404
+
+call POST "/groups/$GROUP/expenses" "$ALICE_TOKEN" "$(expense "Pet care" 10 "$ALICE" "$ALICE,$BOB" PETS)"
+check "Custom category accepted" 201
+check_body "Custom category saved" '"category":"PETS"'
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

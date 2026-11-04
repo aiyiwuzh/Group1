@@ -33,6 +33,10 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".ProfileActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
             android:name=".GroupMembersActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

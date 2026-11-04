@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import androidx.appcompat.app.AlertDialog;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -37,9 +38,28 @@ public class LoginActivity extends AppCompatActivity {
         errorText = findViewById(R.id.tvLoginError);
         loginButton = findViewById(R.id.btnSubmitLogin);
         Button backButton = findViewById(R.id.btnBack);
+        Button recentButton = findViewById(R.id.btnRecentAccounts);
 
         backButton.setOnClickListener(v -> finish());
         loginButton.setOnClickListener(v -> login());
+        recentButton.setOnClickListener(v -> chooseRecentAccount());
+        recentButton.setVisibility(new SessionManager(this).getRecentAccountEmails().isEmpty()
+                ? android.view.View.GONE : android.view.View.VISIBLE);
+    }
+
+    private void chooseRecentAccount() {
+        java.util.List<String> emails = new SessionManager(this).getRecentAccountEmails();
+        if (emails.isEmpty()) return;
+        String[] choices = emails.toArray(new String[0]);
+        new AlertDialog.Builder(this)
+                .setTitle("Choose an account")
+                .setItems(choices, (dialog, which) -> {
+                    emailInput.setText(choices[which]);
+                    passwordInput.setText("");
+                    passwordInput.requestFocus();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void login() {
@@ -79,6 +99,7 @@ public class LoginActivity extends AppCompatActivity {
                                     result.getName(),
                                     result.getExpiresIn()
                             );
+                            sessionManager.rememberAccountEmail(email);
 
                             Toast.makeText(
                                     LoginActivity.this,

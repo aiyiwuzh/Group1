@@ -177,6 +177,10 @@ public class SplitCalculator {
             if (percent.signum() < 0) {
                 throw new InvalidSplitException("Percentages cannot be negative");
             }
+            if (percent.stripTrailingZeros().scale() > 8) {
+                throw new InvalidSplitException(
+                        "Percentages can have at most 8 decimal places");
+            }
             percentSum = percentSum.add(percent);
         }
 

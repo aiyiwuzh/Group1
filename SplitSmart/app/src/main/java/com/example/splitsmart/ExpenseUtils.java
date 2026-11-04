@@ -29,13 +29,14 @@ public final class ExpenseUtils {
     };
 
     public static final String[] CATEGORY_LABELS = {
-            "Food", "Housing", "Transportation", "Entertainment", "Other"
+            "Food", "Housing", "Transportation", "Entertainment", "Other", "Custom…"
     };
 
     public static final int DEFAULT_CATEGORY_INDEX = 4;
+    public static final int CUSTOM_CATEGORY_INDEX = 5;
 
     private static final DateTimeFormatter DATE_FORMAT =
-            DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a", Locale.US)
+            DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US)
                     .withZone(ZoneId.systemDefault());
 
     private ExpenseUtils() {
@@ -51,7 +52,10 @@ public final class ExpenseUtils {
     }
 
     public static String categoryLabel(String value) {
-        return CATEGORY_LABELS[categoryIndex(value)];
+        int index = categoryIndex(value);
+        if (value == null) return "Other";
+        if (CATEGORY_VALUES[index].equalsIgnoreCase(value)) return CATEGORY_LABELS[index];
+        return value;
     }
 
     public static String formatMoney(BigDecimal amount) {

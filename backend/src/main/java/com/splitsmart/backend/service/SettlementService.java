@@ -67,7 +67,7 @@ public class SettlementService {
         return requireUser(userId);
     }
 
-    private User requirePayee(Long groupId, Long payerId, Long payeeId) {
+    private User requireCounterparty(Long groupId, Long payerId, Long payeeId) {
         if (payerId.equals(payeeId)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "You cannot record a payment to yourself");
@@ -111,9 +111,10 @@ public class SettlementService {
                 toMember(settlement.getPayer()),
                 toMember(settlement.getPayee()),
                 settlement.getAmount(),
+                settlement.getNote(),
                 settlement.getCreatedAt(),
                 settlement.getUpdatedAt(),
-                settlement.getPayer().getId().equals(currentUserId));
+                settlement.getCreator().getId().equals(currentUserId));
     }
 
     private static MemberResponse toMember(User user) {
@@ -134,13 +135,14 @@ public class SettlementService {
     public SettlementResponse createSettlement(
             Long userId, Long groupId, SettlementRequest request) {
         Group group = requireGroup(groupId);
-        User payer = requireGroupMember(groupId, userId);
-        User payee = requirePayee(groupId, userId, request.payeeId());
+        User payer = requireGroupMember(groupId, request.payerId());
+        User payee = requireCounterparty(groupId, payer.getId(), request.payeeId());
+        requireActorIsAParty(userId, payer, payee);
         BigDecimal amount = normalizeAmount(request.amount());
-        requireAmountWithinDebt(groupId, userId, payee.getId(), amount, null);
+        requireAmountWithinDebt(groupId, payer.getId(), payee.getId(), amount, null);
 
         Settlement settlement = settlementRepository.save(
-                new Settlement(group, payer, payee, amount));
+                new Settlement(group, payer, payee, amount, requireGroupMember(groupId, userId), cleanNote(request.note())));
         return toResponse(settlement, userId);
     }
 
@@ -150,15 +152,19 @@ public class SettlementService {
         Settlement settlement = requireSettlement(settlementId);
         Long groupId = settlement.getGroup().getId();
         requireGroupMember(groupId, userId);
-        requirePayer(userId, settlement);
+        requireCreator(userId, settlement);
 
-        User payee = requirePayee(groupId, userId, request.payeeId());
+        User payer = requireGroupMember(groupId, request.payerId());
+        User payee = requireCounterparty(groupId, payer.getId(), request.payeeId());
+        requireActorIsAParty(userId, payer, payee);
         BigDecimal amount = normalizeAmount(request.amount());
         requireAmountWithinDebt(
-                groupId, userId, payee.getId(), amount, settlementId);
+                groupId, payer.getId(), payee.getId(), amount, settlementId);
 
+        settlement.setPayer(payer);
         settlement.setPayee(payee);
         settlement.setAmount(amount);
+        settlement.setNote(cleanNote(request.note()));
         return toResponse(settlementRepository.saveAndFlush(settlement), userId);
     }
 
@@ -166,15 +172,27 @@ public class SettlementService {
     public void deleteSettlement(Long userId, Long settlementId) {
         Settlement settlement = requireSettlement(settlementId);
         requireGroupMember(settlement.getGroup().getId(), userId);
-        requirePayer(userId, settlement);
+        requireCreator(userId, settlement);
         settlementRepository.delete(settlement);
     }
 
-    private static void requirePayer(Long userId, Settlement settlement) {
-        if (!settlement.getPayer().getId().equals(userId)) {
+    private static void requireCreator(Long userId, Settlement settlement) {
+        if (!settlement.getCreator().getId().equals(userId)) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Only the member who recorded this settlement can change it");
         }
+    }
+
+    private static void requireActorIsAParty(Long userId, User payer, User payee) {
+        if (!payer.getId().equals(userId) && !payee.getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You must be the payer or recipient to record this settlement");
+        }
+    }
+
+    private static String cleanNote(String note) {
+        if (note == null || note.trim().isEmpty()) return null;
+        return note.trim();
     }
 }

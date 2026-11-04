@@ -9,5 +9,7 @@ public class ExpenseShare {
     private boolean payer;
 
     public Long getUserId() { return userId; }
+    public String getName() { return name; }
     public BigDecimal getAmount() { return amount; }
+    public boolean isPayer() { return payer; }
 }

@@ -51,5 +51,16 @@
                 android:textSize="13sp"
                 android:layout_marginTop="3dp" />
         </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnRemoveMember"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Remove member from group"
+            android:padding="12dp"
+            android:src="@drawable/ic_delete_outline"
+            android:tint="@color/error"
+            android:visibility="gone" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

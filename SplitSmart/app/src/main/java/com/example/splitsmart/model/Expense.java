@@ -3,6 +3,7 @@ package com.example.splitsmart.model;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 public class Expense {
 
@@ -21,6 +22,7 @@ public class Expense {
     private boolean canEdit;
     private String splitMethod;
     private List<ExpenseShare> shares;
+    private Map<Long, BigDecimal> splitValues;
 
     public Long getId() {
         return id;
@@ -77,4 +79,5 @@ public class Expense {
     public String getSplitMethod() { return splitMethod; }
 
     public List<ExpenseShare> getShares() { return shares; }
+    public Map<Long, BigDecimal> getSplitValues() { return splitValues; }
 }

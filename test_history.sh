@@ -118,8 +118,39 @@ check "Seed: concert" 201
 
 # Bob owes Alice 15.00 for groceries and is owed 9.00 for the Uber: net 6.00
 call POST "/groups/$GROUP/settlements" "$BOB_TOKEN" \
-    "{\"payeeId\":$ALICE,\"amount\":5}"
+    "{\"payerId\":$BOB,\"payeeId\":$ALICE,\"amount\":5,\"note\":\"cash repayment\"}"
 check "Seed: Bob pays Alice" 201
+check_body "Settlement note saved" '"note":"cash repayment"'
+
+call GET "/groups/$GROUP/balances" "$BOB_TOKEN"
+check_body "Partial payment leaves one dollar owed" '"memberName":"Alice","status":"YOU_OWE","amount":1.00'
+
+# Alice is the recipient and can also record Bob's payment. Edit and delete
+# that recipient-created record, checking the pairwise balance each time.
+call POST "/groups/$GROUP/settlements" "$ALICE_TOKEN" \
+    "{\"payerId\":$BOB,\"payeeId\":$ALICE,\"amount\":1,\"note\":\"recipient recorded\"}"
+check "Recipient can record a settlement" 201
+RECIPIENT_SETTLEMENT=$(echo "$BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d: -f2)
+
+call GET "/groups/$GROUP/balances" "$ALICE_TOKEN"
+check_body "Recipient's balance updates after recording payment" '"memberName":"Bob","status":"SETTLED","amount":0.00'
+
+call GET "/groups/$GROUP/history?q=recipient%20recorded" "$ALICE_TOKEN"
+check_items "New settlement note appears in history" 1
+
+call PUT "/settlements/$RECIPIENT_SETTLEMENT" "$ALICE_TOKEN" \
+    "{\"payerId\":$BOB,\"payeeId\":$ALICE,\"amount\":0.5,\"note\":\"edited recipient note\"}"
+check "Settlement creator can edit settlement" 200
+check_body "Settlement edit updates its note" '"note":"edited recipient note"'
+
+call GET "/groups/$GROUP/balances" "$BOB_TOKEN"
+check_body "Edited payment recalculates remaining debt" '"memberName":"Alice","status":"YOU_OWE","amount":0.50'
+
+call DELETE "/settlements/$RECIPIENT_SETTLEMENT" "$ALICE_TOKEN"
+check "Settlement creator can delete settlement" 204
+
+call GET "/groups/$GROUP/balances" "$BOB_TOKEN"
+check_body "Deleting payment restores the remaining debt" '"memberName":"Alice","status":"YOU_OWE","amount":1.00'
 
 # --- History list ---
 call GET "/groups/$GROUP/history" "$BOB_TOKEN"
@@ -137,10 +168,16 @@ call GET "/groups/$GROUP/history?sort=AMOUNT_HIGH" "$BOB_TOKEN"
 check_body "Largest amount first" '"items":\[{"type":"EXPENSE","id":[0-9]*,"title":"Concert"'
 
 # --- Search and filters ---
-call GET "/groups/$GROUP/history?q=FRONT%20ROW" "$BOB_TOKEN"
+call GET "/groups/$GROUP/history?q=front%20row" "$BOB_TOKEN"
 check "Keyword search" 200
-check_items "Search matches the note, ignoring case" 1
+check_items "Case-sensitive search matches expense note" 1
 check_body "Search found the concert" '"title":"Concert"'
+
+call GET "/groups/$GROUP/history?q=FRONT%20ROW" "$BOB_TOKEN"
+check_items "Case-sensitive search rejects different capitalization" 0
+
+call GET "/groups/$GROUP/history?q=cash%20repayment" "$BOB_TOKEN"
+check_items "Settlement note is searchable" 1
 
 call GET "/groups/$GROUP/history?type=SETTLEMENT" "$BOB_TOKEN"
 check_items "Type filter: settlements only" 1
@@ -162,7 +199,7 @@ call GET "/groups/$GROUP/history?sort=SIDEWAYS" "$BOB_TOKEN"
 check "Unknown sort rejected" 400
 
 call GET "/groups/$GROUP/history?category=PETS" "$BOB_TOKEN"
-check "Unknown category rejected" 400
+check "Custom category filter accepted" 200
 
 call GET "/groups/$GROUP/history?memberId=$OUT" "$BOB_TOKEN"
 check "Filtering by a non-member rejected" 400

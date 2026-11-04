@@ -1,5 +1,7 @@
 package com.example.splitsmart;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
@@ -29,6 +31,8 @@ import com.example.splitsmart.model.SplitPreviewRequest;
 import com.example.splitsmart.network.RetrofitClient;
 
 import java.math.BigDecimal;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +44,9 @@ import java.util.Set;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 
 // Creates an expense (EXTRA_GROUP_ID) or edits one (EXTRA_GROUP_ID + EXTRA_EXPENSE_ID).
 public class AddExpenseActivity extends AppCompatActivity {
@@ -58,6 +65,9 @@ public class AddExpenseActivity extends AppCompatActivity {
     private EditText amountInput;
     private EditText noteInput;
     private Spinner categorySpinner;
+    private EditText customCategoryInput;
+    private Uri receiptUri;
+    private Button attachReceiptButton;
     private Spinner payerSpinner;
     private Spinner splitMethodSpinner;
     private LinearLayout participantsLayout;
@@ -94,6 +104,14 @@ public class AddExpenseActivity extends AppCompatActivity {
         });
         noteInput = findViewById(R.id.etExpenseNote);
         categorySpinner = findViewById(R.id.spCategory);
+        customCategoryInput = findViewById(R.id.etCustomCategory);
+        attachReceiptButton = findViewById(R.id.btnAttachReceipt);
+        attachReceiptButton.setOnClickListener(v -> {
+            Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            picker.addCategory(Intent.CATEGORY_OPENABLE);
+            picker.setType("image/*");
+            startActivityForResult(picker, 412);
+        });
         payerSpinner = findViewById(R.id.spPayer);
         splitMethodSpinner = findViewById(R.id.spSplitMethod);
         participantsLayout = findViewById(R.id.layoutParticipants);
@@ -114,6 +132,13 @@ public class AddExpenseActivity extends AppCompatActivity {
         categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         categorySpinner.setAdapter(categoryAdapter);
         categorySpinner.setSelection(ExpenseUtils.DEFAULT_CATEGORY_INDEX);
+        categorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                customCategoryInput.setVisibility(position == ExpenseUtils.CUSTOM_CATEGORY_INDEX
+                        ? View.VISIBLE : View.GONE);
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) { }
+        });
 
         ArrayAdapter<String> splitAdapter = new ArrayAdapter<>(
                 this, android.R.layout.simple_spinner_item, SPLIT_METHODS);
@@ -227,7 +252,12 @@ public class AddExpenseActivity extends AppCompatActivity {
     private void fillForm(Expense expense) {
         titleInput.setText(expense.getTitle());
         amountInput.setText(expense.getAmount().toPlainString());
-        categorySpinner.setSelection(ExpenseUtils.categoryIndex(expense.getCategory()));
+        int categoryIndex = ExpenseUtils.categoryIndex(expense.getCategory());
+        boolean customCategory = expense.getCategory() != null
+                && !ExpenseUtils.CATEGORY_VALUES[categoryIndex].equalsIgnoreCase(expense.getCategory());
+        categorySpinner.setSelection(customCategory
+                ? ExpenseUtils.CUSTOM_CATEGORY_INDEX : categoryIndex);
+        if (customCategory) customCategoryInput.setText(expense.getCategory());
         noteInput.setText(expense.getNote() == null ? "" : expense.getNote());
         Set<Long> participantIds = new HashSet<>();
         for (Member participant : expense.getParticipants()) participantIds.add(participant.getId());
@@ -237,8 +267,11 @@ public class AddExpenseActivity extends AppCompatActivity {
         selectPayer(expense.getPayer().getId());
 
         String savedMethod = expense.getSplitMethod();
-        if ("EXACT".equals(savedMethod) || "PERCENTAGE".equals(savedMethod)) {
-            // Percentages are not returned by the API; exact saved shares preserve the same split.
+        if ("PERCENTAGE".equals(savedMethod)) {
+            splitMethodSpinner.setSelection(2);
+            editingShares = expense.getSplitValues() == null
+                    ? new HashMap<>() : new HashMap<>(expense.getSplitValues());
+        } else if ("EXACT".equals(savedMethod)) {
             splitMethodSpinner.setSelection(1);
             editingShares = new HashMap<>();
             if (expense.getShares() != null) {
@@ -383,8 +416,15 @@ public class AddExpenseActivity extends AppCompatActivity {
         final ExpenseForm form;
         try { form = readForm(); } catch (IllegalArgumentException e) { errorText.setText(e.getMessage()); return; }
         String note = noteInput.getText().toString().trim();
+        String category = categorySpinner.getSelectedItemPosition() == ExpenseUtils.CUSTOM_CATEGORY_INDEX
+                ? customCategoryInput.getText().toString().trim()
+                : ExpenseUtils.CATEGORY_VALUES[categorySpinner.getSelectedItemPosition()];
+        if (category.isEmpty()) {
+            errorText.setText("Enter a name for the custom category.");
+            return;
+        }
         ExpenseRequest request = new ExpenseRequest(form.title, form.amount,
-                ExpenseUtils.CATEGORY_VALUES[categorySpinner.getSelectedItemPosition()],
+                category,
                 form.payerId, form.participantIds, note.isEmpty() ? null : note,
                 selectedSplitMethod(), form.splitValues);
         saveButton.setEnabled(false); errorText.setText("");
@@ -393,14 +433,68 @@ public class AddExpenseActivity extends AppCompatActivity {
                 : RetrofitClient.getApiService().createExpense(auth, groupId, request);
         call.enqueue(new Callback<Expense>() {
             @Override public void onResponse(Call<Expense> call, Response<Expense> response) {
-                saveButton.setEnabled(true);
-                if (response.isSuccessful()) {
-                    Toast.makeText(AddExpenseActivity.this, isEditing() ? "Expense updated" : "Expense added", Toast.LENGTH_SHORT).show();
-                    finish();
-                } else errorText.setText(ExpenseUtils.errorMessage(response, "Could not save expense"));
+                if (response.isSuccessful() && response.body() != null) {
+                    if (receiptUri != null) uploadReceipt(response.body().getId());
+                    else {
+                        saveButton.setEnabled(true);
+                        Toast.makeText(AddExpenseActivity.this, isEditing() ? "Expense updated" : "Expense added", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                } else {
+                    saveButton.setEnabled(true);
+                    errorText.setText(ExpenseUtils.errorMessage(response, "Could not save expense"));
+                }
             }
             @Override public void onFailure(Call<Expense> call, Throwable t) { saveButton.setEnabled(true); errorText.setText("Cannot connect to the server."); }
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 412 && resultCode == RESULT_OK && data != null
+                && data.getData() != null) {
+            receiptUri = data.getData();
+            attachReceiptButton.setText("Receipt photo selected · tap to replace");
+        }
+    }
+
+    private void uploadReceipt(Long savedExpenseId) {
+        try (InputStream input = getContentResolver().openInputStream(receiptUri);
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            if (input == null) throw new java.io.IOException("Cannot read selected image");
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                output.write(buffer, 0, count);
+                if (output.size() > 5 * 1024 * 1024) {
+                    throw new java.io.IOException("Receipt photo must be 5 MB or smaller.");
+                }
+            }
+            String type = getContentResolver().getType(receiptUri);
+            if (type == null) type = "image/jpeg";
+            RequestBody body = RequestBody.create(MediaType.parse(type), output.toByteArray());
+            MultipartBody.Part photo = MultipartBody.Part.createFormData("file", "receipt", body);
+            RetrofitClient.getApiService().uploadReceipt(auth, savedExpenseId, photo)
+                    .enqueue(new Callback<Void>() {
+                        @Override public void onResponse(Call<Void> call, Response<Void> response) {
+                            if (response.isSuccessful()) {
+                                Toast.makeText(AddExpenseActivity.this, "Expense and receipt photo saved.", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(AddExpenseActivity.this,
+                                        ExpenseUtils.errorMessage(response, "Expense saved, but receipt upload failed."), Toast.LENGTH_LONG).show();
+                            }
+                            finish();
+                        }
+                        @Override public void onFailure(Call<Void> call, Throwable t) {
+                            Toast.makeText(AddExpenseActivity.this, "Expense saved, but receipt upload failed. You can attach it from Edit Expense.", Toast.LENGTH_LONG).show();
+                            finish();
+                        }
+                    });
+        } catch (Exception e) {
+            Toast.makeText(this, "Expense saved, but the photo could not be read: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            finish();
+        }
     }
 
     private static class ExpenseForm {

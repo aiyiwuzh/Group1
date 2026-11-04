@@ -36,6 +36,7 @@ public class BalanceActivity extends AppCompatActivity {
     public static final String EXTRA_GROUP_NAME = "group_name";
 
     private long groupId;
+    private long currentUserId = -1;
     private String groupName;
     private String auth;
     private BalanceViewModel balanceViewModel;
@@ -147,6 +148,7 @@ public class BalanceActivity extends AppCompatActivity {
         balanceRows.removeAllViews();
 
         List<PairwiseBalance> balances = summary.getBalances();
+        currentUserId = summary.getUserId() == null ? -1 : summary.getUserId();
         noBalances.setVisibility(balances == null || balances.isEmpty()
                 ? View.VISIBLE : View.GONE);
         if (balances == null) return;
@@ -172,16 +174,21 @@ public class BalanceActivity extends AppCompatActivity {
             description.setTextColor(0xFF17212B);
             row.addView(description);
 
-            if ("YOU_OWE".equals(balance.getStatus())) {
+            if ("YOU_OWE".equals(balance.getStatus())
+                    || "OWES_YOU".equals(balance.getStatus())) {
                 com.google.android.material.button.MaterialButton payButton =
                         new com.google.android.material.button.MaterialButton(this);
-                payButton.setText("Record payment");
+                boolean youPay = "YOU_OWE".equals(balance.getStatus());
+                payButton.setText(youPay ? "Record payment sent" : "Record payment received");
                 payButton.setAllCaps(false);
                 payButton.setTextColor(Color.WHITE);
                 payButton.setCornerRadius(dp(14));
                 payButton.setBackgroundTintList(ColorStateList.valueOf(0xFF0F8B8D));
                 payButton.setOnClickListener(v -> openSettlement(
-                        balance.getMemberId(), balance.getMemberName(),
+                        youPay ? currentUserId : balance.getMemberId(),
+                        youPay ? "You" : balance.getMemberName(),
+                        youPay ? balance.getMemberId() : currentUserId,
+                        youPay ? balance.getMemberName() : "You",
                         balance.getAmount(), null));
                 LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT, dp(48));
@@ -213,6 +220,13 @@ public class BalanceActivity extends AppCompatActivity {
             summary.setTextSize(15);
             summary.setTextColor(0xFF17212B);
             row.addView(summary);
+            if (settlement.getNote() != null && !settlement.getNote().isBlank()) {
+                TextView note = new TextView(this);
+                note.setText(settlement.getNote());
+                note.setTextSize(14);
+                note.setTextColor(0xFF526273);
+                row.addView(note);
+            }
 
             if (settlement.canEdit()) {
                 LinearLayout actions = new LinearLayout(this);
@@ -222,8 +236,8 @@ public class BalanceActivity extends AppCompatActivity {
                 edit.setText("Edit");
                 edit.setAllCaps(false);
                 edit.setOnClickListener(v -> openSettlement(
-                        settlement.getPayee().getId(),
-                        settlement.getPayee().getName(),
+                        settlement.getPayer().getId(), settlement.getPayer().getName(),
+                        settlement.getPayee().getId(), settlement.getPayee().getName(),
                         null, settlement));
                 actions.addView(edit, new LinearLayout.LayoutParams(
                         0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
@@ -242,13 +256,15 @@ public class BalanceActivity extends AppCompatActivity {
     }
 
     private void openSettlement(
-            Long payeeId, String payeeName, BigDecimal maxAmount,
+            Long payerId, String payerName, Long payeeId, String payeeName, BigDecimal maxAmount,
             Settlement existing) {
         Intent intent = new Intent(this, SettleUpActivity.class);
         intent.putExtra(SettleUpActivity.EXTRA_GROUP_ID, groupId);
         intent.putExtra(SettleUpActivity.EXTRA_GROUP_NAME, groupName);
         intent.putExtra(SettleUpActivity.EXTRA_PAYEE_ID, payeeId);
         intent.putExtra(SettleUpActivity.EXTRA_PAYEE_NAME, payeeName);
+        intent.putExtra(SettleUpActivity.EXTRA_PAYER_ID, payerId);
+        intent.putExtra(SettleUpActivity.EXTRA_PAYER_NAME, payerName);
         if (maxAmount != null) {
             intent.putExtra(SettleUpActivity.EXTRA_MAX_AMOUNT,
                     maxAmount.toPlainString());
@@ -258,6 +274,7 @@ public class BalanceActivity extends AppCompatActivity {
                     existing.getId());
             intent.putExtra(SettleUpActivity.EXTRA_AMOUNT,
                     existing.getAmount().toPlainString());
+            intent.putExtra(SettleUpActivity.EXTRA_NOTE, existing.getNote());
         }
         startActivity(intent);
     }

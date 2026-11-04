@@ -7,16 +7,22 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ImageView;
+import android.graphics.BitmapFactory;
+import android.view.Gravity;
+import android.view.ViewGroup;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.splitsmart.model.Expense;
+import com.example.splitsmart.model.ExpenseShare;
 import com.example.splitsmart.network.RetrofitClient;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import okhttp3.ResponseBody;
 
 // Shows one expense. Only its creator sees the available actions.
 public class ExpenseDetailActivity extends AppCompatActivity {
@@ -46,6 +52,7 @@ public class ExpenseDetailActivity extends AppCompatActivity {
         editButton = findViewById(R.id.btnEditExpense);
         deleteButton = findViewById(R.id.btnDeleteExpense);
         markSettledButton = findViewById(R.id.btnMarkSettledExpense);
+        findViewById(R.id.btnViewReceipt).setOnClickListener(v -> loadReceipt());
         errorText = findViewById(R.id.tvDetailError);
         Button backButton = findViewById(R.id.btnBack);
 
@@ -114,6 +121,18 @@ public class ExpenseDetailActivity extends AppCompatActivity {
                 .setText(expense.getPayer().getName());
         ((TextView) findViewById(R.id.tvDetailParticipants))
                 .setText(ExpenseUtils.joinNames(expense.getParticipants()));
+        ((TextView) findViewById(R.id.tvDetailSplitMethod))
+                .setText(splitMethodLabel(expense.getSplitMethod()));
+        StringBuilder shares = new StringBuilder();
+        if (expense.getShares() != null) {
+            for (ExpenseShare share : expense.getShares()) {
+                if (shares.length() > 0) shares.append('\n');
+                shares.append(share.getName());
+                shares.append(share.isPayer() ? " (payer's share): " : " owes: ");
+                shares.append(ExpenseUtils.formatMoney(share.getAmount()));
+            }
+        }
+        ((TextView) findViewById(R.id.tvDetailShares)).setText(shares.toString());
         ((TextView) findViewById(R.id.tvDetailCreated))
                 .setText(ExpenseUtils.formatDate(expense.getCreatedAt())
                         + " by " + expense.getCreator().getName());
@@ -127,23 +146,67 @@ public class ExpenseDetailActivity extends AppCompatActivity {
 
         findViewById(R.id.tvDetailLocked)
                 .setVisibility(expense.isSettled() ? View.VISIBLE : View.GONE);
+        if (expense.isSettled()) {
+            ((TextView) findViewById(R.id.tvDetailLocked)).setText(
+                    "Marked settled. This is a label only; edits and balance recalculation remain available.");
+        }
 
         int actions = expense.canEdit() ? View.VISIBLE : View.GONE;
         editButton.setVisibility(actions);
         deleteButton.setVisibility(actions);
-        markSettledButton.setVisibility(actions);
+        markSettledButton.setVisibility(expense.canEdit() && !expense.isSettled()
+                ? View.VISIBLE : View.GONE);
+    }
+
+    private static String splitMethodLabel(String splitMethod) {
+        if ("EXACT".equals(splitMethod)) return "Exact amounts";
+        if ("PERCENTAGE".equals(splitMethod)) return "Percentages";
+        return "Equal";
     }
 
     private void confirmMarkSettled() {
         new AlertDialog.Builder(this)
                 .setTitle("Mark expense as settled?")
                 .setMessage("Only continue if this expense has been fully paid. "
-                        + "This marks and locks the expense; it does not record a "
-                        + "payment or change balances.")
+                        + "This adds a settled label only. It does not record a "
+                        + "payment or change balances, and the expense can still be edited.")
                 .setPositiveButton("Mark settled",
                         (dialog, which) -> markExpenseSettled())
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void loadReceipt() {
+        RetrofitClient.getApiService().getReceipt(auth, expenseId)
+                .enqueue(new Callback<ResponseBody>() {
+                    @Override public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                        if (!response.isSuccessful() || response.body() == null) {
+                            Toast.makeText(ExpenseDetailActivity.this,
+                                    ExpenseUtils.errorMessage(response, "No receipt photo is attached."),
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        android.graphics.Bitmap bitmap = BitmapFactory.decodeStream(response.body().byteStream());
+                        if (bitmap == null) {
+                            Toast.makeText(ExpenseDetailActivity.this, "The receipt image could not be displayed.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        ImageView image = new ImageView(ExpenseDetailActivity.this);
+                        image.setImageBitmap(bitmap);
+                        image.setAdjustViewBounds(true);
+                        image.setMaxHeight((int) (getResources().getDisplayMetrics().heightPixels * 0.7));
+                        int padding = (int) (12 * getResources().getDisplayMetrics().density);
+                        image.setPadding(padding, padding, padding, padding);
+                        new AlertDialog.Builder(ExpenseDetailActivity.this)
+                                .setTitle("Receipt photo")
+                                .setView(image)
+                                .setPositiveButton("Done", null)
+                                .show();
+                    }
+                    @Override public void onFailure(Call<ResponseBody> call, Throwable t) {
+                        Toast.makeText(ExpenseDetailActivity.this, "Could not load the receipt photo.", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void markExpenseSettled() {

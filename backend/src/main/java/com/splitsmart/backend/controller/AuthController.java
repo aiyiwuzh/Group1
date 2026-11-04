@@ -11,8 +11,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
+
 
 import com.splitsmart.backend.dto.UpdateProfileRequest;
 import com.splitsmart.backend.dto.ProfileResponse;
@@ -50,11 +50,11 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public Map<String, Object> me(
+    public ProfileResponse me(
             @org.springframework.security.core.annotation.AuthenticationPrincipal
             org.springframework.security.oauth2.jwt.Jwt jwt) {
-
-        return Map.of("userId", Long.parseLong(jwt.getSubject()));
+        var user = authService.getProfile(Long.parseLong(jwt.getSubject()));
+        return profileResponse(user);
     }
 
 
@@ -67,11 +67,12 @@ public class AuthController {
 
         var user = authService.updateProfile(userId, request);
 
-        return new ProfileResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail()
-        );
+        return profileResponse(user);
+    }
+
+    private ProfileResponse profileResponse(com.splitsmart.backend.entity.User user) {
+        return new ProfileResponse(user.getId(), user.getName(),
+                user.getEmail(), user.getUscId());
     }
 
 }

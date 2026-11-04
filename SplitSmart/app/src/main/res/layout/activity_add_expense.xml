@@ -52,7 +52,6 @@
                 android:id="@+id/etExpenseTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="e.g. Groceries"
                 android:inputType="textCapSentences"
                 android:maxLength="100"
                 android:singleLine="true" />
@@ -78,7 +77,6 @@
                 android:id="@+id/etExpenseAmount"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="0.00"
                 android:inputType="numberDecimal"
                 android:singleLine="true" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -92,6 +90,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="48dp"
+            android:layout_marginBottom="16dp" />
+
+        <EditText
+            android:id="@+id/etCustomCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Custom category name"
+            android:singleLine="true"
+            android:maxLength="50"
+            android:visibility="gone"
+            android:layout_marginTop="-12dp"
             android:layout_marginBottom="16dp" />
 
         <TextView
@@ -195,12 +204,24 @@
                 android:id="@+id/etExpenseNote"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Add details"
                 android:inputType="textMultiLine|textCapSentences"
                 android:maxLength="500"
                 android:minLines="2"
                 android:gravity="top" />
         </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAttachReceipt"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="Attach receipt photo (optional)"
+            android:textAllCaps="false"
+            android:textColor="@color/brand_ink"
+            app:strokeColor="@color/card_outline"
+            app:cornerRadius="14dp"
+            android:layout_marginTop="-16dp"
+            android:layout_marginBottom="18dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSaveExpense"

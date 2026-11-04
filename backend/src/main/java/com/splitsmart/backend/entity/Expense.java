@@ -2,7 +2,6 @@
 package com.splitsmart.backend.entity;
 
 import jakarta.persistence.*;
-
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -32,10 +31,8 @@ public class Expense {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(nullable = false, length = 20)
-    private ExpenseCategory category;
+    @Column(nullable = false, length = 50)
+    private String category;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "payer_id", nullable = false)
@@ -82,6 +79,14 @@ public class Expense {
     @Column(name = "share_amount", nullable = false, precision = 10, scale = 2)
     private Map<Long, BigDecimal> shares = new LinkedHashMap<>();
 
+    // Original percentage inputs, retained for editing saved percentage splits.
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "expense_split_values",
+            joinColumns = @JoinColumn(name = "expense_id"))
+    @MapKeyColumn(name = "user_id")
+    @Column(name = "split_value", nullable = false, precision = 18, scale = 8)
+    private Map<Long, BigDecimal> splitValues = new LinkedHashMap<>();
+
     protected Expense() {
     }
 
@@ -111,7 +116,7 @@ public class Expense {
     public Group getGroup() { return group; }
     public String getTitle() { return title; }
     public BigDecimal getAmount() { return amount; }
-    public ExpenseCategory getCategory() { return category; }
+    public String getCategory() { return category; }
     public User getPayer() { return payer; }
     public User getCreator() { return creator; }
     public String getNote() { return note; }
@@ -121,6 +126,7 @@ public class Expense {
     public Set<User> getParticipants() { return participants; }
     public SplitMethod getSplitMethod() { return splitMethod; }
     public Map<Long, BigDecimal> getShares() { return shares; }
+    public Map<Long, BigDecimal> getSplitValues() { return splitValues; }
 
     public void setTitle(String title) {
         this.title = title;
@@ -130,7 +136,7 @@ public class Expense {
         this.amount = amount;
     }
 
-    public void setCategory(ExpenseCategory category) {
+    public void setCategory(String category) {
         this.category = category;
     }
 
@@ -159,5 +165,10 @@ public class Expense {
     public void setShares(Map<Long, BigDecimal> shares) {
         this.shares.clear();
         this.shares.putAll(shares);
+    }
+
+    public void setSplitValues(Map<Long, BigDecimal> splitValues) {
+        this.splitValues.clear();
+        if (splitValues != null) this.splitValues.putAll(splitValues);
     }
 }

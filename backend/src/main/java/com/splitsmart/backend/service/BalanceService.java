@@ -205,6 +205,16 @@ public class BalanceService {
         return directed.compareTo(ZERO) > 0 ? directed.setScale(2) : ZERO;
     }
 
+    // Membership changes are allowed only after all pairwise debts involving
+    // the member have been cleared, so old obligations are never hidden.
+    @Transactional(readOnly = true)
+    public boolean hasOutstandingBalance(Long groupId, Long memberId) {
+        return calculateNetDebts(groupId, null).entrySet().stream()
+                .anyMatch(entry -> (entry.getKey().lowerId().equals(memberId)
+                        || entry.getKey().higherId().equals(memberId))
+                        && entry.getValue().compareTo(ZERO) != 0);
+    }
+
     private Map<PairKey, BigDecimal> calculateNetDebts(
             Long groupId, Long excludedSettlementId) {
         Map<PairKey, BigDecimal> net = new HashMap<>();

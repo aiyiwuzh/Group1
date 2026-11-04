@@ -9,6 +9,7 @@ public record SettlementResponse(
         MemberResponse payer,
         MemberResponse payee,
         BigDecimal amount,
+        String note,
         Instant createdAt,
         Instant updatedAt,
         boolean canEdit

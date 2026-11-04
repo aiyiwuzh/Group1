@@ -67,7 +67,7 @@ class HistoryServiceTest {
         ReflectionTestUtils.setField(expense, "createdAt", Instant.parse(createdAt));
         expense.setTitle(title);
         expense.setAmount(new BigDecimal(amount));
-        expense.setCategory(category);
+        expense.setCategory(category.name());
         expense.setPayer(payer);
         expense.setNote(note);
         expense.setParticipants(new LinkedHashSet<>(List.of(participants)));
@@ -123,7 +123,8 @@ class HistoryServiceTest {
         // Times are UTC. Los Angeles is UTC-7 until Nov 1, 2026, then UTC-8.
         expense(14, "Groceries refill", "15.25", ExpenseCategory.FOOD, bob, null,
                 "2026-11-01T06:59:59Z", alice, bob);              // Oct 31 11:59:59 PM in LA
-        settlement(20, bob, alice, "20.00", "2026-10-22T16:00:00Z");
+        settlement(20, bob, alice, "20.00", "2026-10-22T16:00:00Z")
+                .setNote("Cash repayment");
         expense(11, "Uber to LAX", "45.30", ExpenseCategory.TRANSPORTATION, bob, null,
                 "2026-10-20T15:00:00Z", bob, carol);
         settlement(21, carol, bob, "10.00", "2026-10-10T16:00:00Z");
@@ -225,15 +226,18 @@ class HistoryServiceTest {
         assertEquals(alice.getId(), item.payee().id());
         assertNull(item.category());
         assertEquals(2, item.participantCount());
+        assertEquals("Cash repayment", item.note());
     }
 
     @Test
     void expenseRowsCarryCategoryParticipantsAndNote() {
-        HistoryItemResponse item = history("trader", null, null, null, null).items().get(0);
+        HistoryItemResponse item = history("Trader", null, null, null, null).items().get(0);
 
         assertEquals(TransactionType.EXPENSE, item.type());
-        assertEquals(ExpenseCategory.FOOD, item.category());
+        assertEquals("FOOD", item.category());
         assertEquals(3, item.participantCount());
+        assertEquals(List.of("Alice", "Bob", "Carol"),
+                item.participants().stream().map(MemberResponse::name).toList());
         assertEquals("weekly groceries", item.note());
         assertNull(item.payee());
     }
@@ -241,14 +245,21 @@ class HistoryServiceTest {
     // ------------------------------------------------------------------ search
 
     @Test
-    void keywordMatchesTitlesAndNotesIgnoringCase() {
+    void keywordMatchesTitlesAndNotesCaseSensitively() {
         // 14 by title, 10 by its note
-        assertEquals(List.of(14L, 10L), ids(history("  GROCERIES ", null, null, null, null)));
+        assertEquals(List.of(14L, 10L), ids(history("  groceries ", null, null, null, null)));
+        assertTrue(history("GROCERIES", null, null, null, null).items().isEmpty());
     }
 
     @Test
     void keywordMatchesSettlementNames() {
-        assertEquals(List.of(21L), ids(history("carol paid", null, null, null, null)));
+        assertEquals(List.of(21L), ids(history("Carol paid", null, null, null, null)));
+    }
+
+    @Test
+    void keywordMatchesSettlementNotesCaseSensitively() {
+        assertEquals(List.of(20L), ids(history("Cash repayment", null, null, null, null)));
+        assertTrue(history("cash repayment", null, null, null, null).items().isEmpty());
     }
 
     @Test
@@ -330,8 +341,8 @@ class HistoryServiceTest {
         assertEquals(3, summary.expenseCount());
         assertEquals(new BigDecimal("120.55"), summary.totalSpending());
         assertEquals(List.of(
-                new CategoryTotalResponse(ExpenseCategory.FOOD, 2, new BigDecimal("75.25")),
-                new CategoryTotalResponse(ExpenseCategory.TRANSPORTATION, 1, new BigDecimal("45.30"))),
+                new CategoryTotalResponse("FOOD", 2, new BigDecimal("75.25")),
+                new CategoryTotalResponse("TRANSPORTATION", 1, new BigDecimal("45.30"))),
                 summary.categories());
     }
 

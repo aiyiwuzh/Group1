@@ -2,7 +2,8 @@
 package com.splitsmart.backend.dto;
 
 public record ProfileResponse(
-        Long id,
+        Long userId,
         String name,
-        String email
+        String email,
+        String uscId
 ) {}

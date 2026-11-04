@@ -32,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     private Button logoutButton;
     private Button groupsButton;
     private Button createGroupButton;
+    private Button profileButton;
+    private Button switchUserButton;
     private SessionManager sessionManager;
 
     @Override
@@ -47,11 +49,23 @@ public class MainActivity extends AppCompatActivity {
         logoutButton = findViewById(R.id.btnLogout);
         groupsButton = findViewById(R.id.btnGroups);
         createGroupButton = findViewById(R.id.btnCreateGroup);
+        profileButton = findViewById(R.id.btnProfile);
+        switchUserButton = findViewById(R.id.btnSwitchUser);
 
         groupsButton.setOnClickListener(v -> chooseGroup());
         createGroupButton.setOnClickListener(v ->
                 startActivity(new Intent(MainActivity.this,
                         CreateGroupActivity.class)));
+        profileButton.setOnClickListener(v ->
+                startActivity(new Intent(MainActivity.this, ProfileActivity.class)));
+
+        switchUserButton.setOnClickListener(v -> {
+            sessionManager.logout();
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        });
 
         logoutButton.setOnClickListener(v -> {
             sessionManager.logout();
@@ -116,6 +130,8 @@ public class MainActivity extends AppCompatActivity {
         createGroupButton.setVisibility(
                 loggedIn ? View.VISIBLE : View.GONE
         );
+        profileButton.setVisibility(loggedIn ? View.VISIBLE : View.GONE);
+        switchUserButton.setVisibility(loggedIn ? View.VISIBLE : View.GONE);
 
         if (loggedIn) {
             connectionStatus.setText(

@@ -29,10 +29,10 @@ import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 // Transaction history (search, filters, sorting) and monthly summaries.
 // Reads the same expense and settlement rows the other features write, so
@@ -92,7 +92,7 @@ public class HistoryService {
 
     // Every argument after groupId is optional (null or blank = no filter).
     //   keyword  - matched against expense titles and notes, and against the
-    //              names in a settlement ("Bob paid Alice"); case-insensitive
+    //              names and notes; case-sensitive
     //   type     - EXPENSE, SETTLEMENT or ALL
     //   category - an expense category; settlements have none, so they are hidden
     //   memberId - an expense's payer or participant, a settlement's payer or payee
@@ -107,7 +107,7 @@ public class HistoryService {
 
         String search = parseKeyword(keyword);
         TransactionType onlyType = parseType(type);
-        ExpenseCategory onlyCategory = parseCategory(category);
+        String onlyCategory = parseCategory(category);
         Sort order = parseSort(sort);
 
         List<MemberResponse> members = membershipRepository.findByGroupId(groupId)
@@ -152,9 +152,9 @@ public class HistoryService {
     }
 
     private static boolean matches(
-            Expense expense, String search, ExpenseCategory category, Long memberId) {
+            Expense expense, String search, String category, Long memberId) {
 
-        if (category != null && expense.getCategory() != category) {
+        if (category != null && !expense.getCategory().equalsIgnoreCase(category)) {
             return false;
         }
 
@@ -165,7 +165,9 @@ public class HistoryService {
             return false;
         }
 
-        return search == null || contains(search, expense.getTitle(), expense.getNote());
+        return search == null || contains(search, expense.getTitle(), expense.getNote())
+                || expense.getParticipants().stream()
+                .map(User::getName).anyMatch(name -> name.contains(search));
     }
 
     private static boolean matches(Settlement settlement, String search, Long memberId) {
@@ -175,12 +177,14 @@ public class HistoryService {
             return false;
         }
 
-        return search == null || contains(search, settlementTitle(settlement));
+        return search == null || contains(search, settlementTitle(settlement),
+                settlement.getNote(), settlement.getPayer().getName(),
+                settlement.getPayee().getName());
     }
 
     private static boolean contains(String search, String... fields) {
         for (String field : fields) {
-            if (field != null && field.toLowerCase(Locale.ROOT).contains(search)) {
+            if (field != null && field.contains(search)) {
                 return true;
             }
         }
@@ -231,8 +235,8 @@ public class HistoryService {
 
         BigDecimal total = ZERO;
         BigDecimal yourShare = ZERO;
-        Map<ExpenseCategory, BigDecimal> totals = new EnumMap<>(ExpenseCategory.class);
-        Map<ExpenseCategory, Integer> counts = new EnumMap<>(ExpenseCategory.class);
+        Map<String, BigDecimal> totals = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, Integer> counts = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         for (Expense expense : expenses) {
             total = total.add(expense.getAmount());
@@ -245,9 +249,9 @@ public class HistoryService {
             }
         }
 
-        // EnumMap iterates in enum order, so equal totals keep a fixed order.
+        // TreeMap keeps category order deterministic when totals are equal.
         List<CategoryTotalResponse> categories = new ArrayList<>();
-        for (Map.Entry<ExpenseCategory, BigDecimal> entry : totals.entrySet()) {
+        for (Map.Entry<String, BigDecimal> entry : totals.entrySet()) {
             categories.add(new CategoryTotalResponse(
                     entry.getKey(), counts.get(entry.getKey()), entry.getValue()));
         }
@@ -273,7 +277,7 @@ public class HistoryService {
             throw badRequest("Search text can be at most "
                     + MAX_KEYWORD_LENGTH + " characters");
         }
-        return trimmed.toLowerCase(Locale.ROOT);
+        return trimmed;
     }
 
     static TransactionType parseType(String type) {
@@ -287,16 +291,16 @@ public class HistoryService {
         }
     }
 
-    static ExpenseCategory parseCategory(String category) {
+    static String parseCategory(String category) {
         if (isBlank(category)) {
             return null;
         }
-        try {
-            return ExpenseCategory.valueOf(category.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException exception) {
-            throw badRequest("category must be FOOD, HOUSING, TRANSPORTATION, "
-                    + "ENTERTAINMENT or OTHER");
+        String value = category.trim();
+        if (value.length() > 50) throw badRequest("category cannot exceed 50 characters");
+        for (ExpenseCategory standard : ExpenseCategory.values()) {
+            if (standard.name().equalsIgnoreCase(value)) return standard.name();
         }
+        return value;
     }
 
     static Sort parseSort(String sort) {
@@ -352,6 +356,7 @@ public class HistoryService {
                 toMember(expense.getPayer()),
                 null,
                 expense.getParticipants().size(),
+                expense.getParticipants().stream().map(HistoryService::toMember).toList(),
                 expense.getNote(),
                 expense.getCreatedAt(),
                 expense.isSettled());
@@ -368,6 +373,7 @@ public class HistoryService {
                 toMember(settlement.getPayee()),
                 2,
                 null,
+                settlement.getNote(),
                 settlement.getCreatedAt(),
                 false);
     }

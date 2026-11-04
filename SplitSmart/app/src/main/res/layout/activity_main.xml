@@ -157,11 +157,39 @@
                     android:visibility="gone" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnProfile"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="My Profile"
+                    android:textAllCaps="false"
+                    android:textSize="16sp"
+                    android:textColor="@color/brand_ink"
+                    app:strokeColor="@color/card_outline"
+                    app:cornerRadius="16dp"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLogout"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:text="Log Out"
+                    android:textAllCaps="false"
+                    android:textSize="16sp"
+                    android:textColor="@color/brand_ink"
+                    app:strokeColor="@color/card_outline"
+                    app:cornerRadius="16dp"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSwitchUser"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="Switch User"
                     android:textAllCaps="false"
                     android:textSize="16sp"
                     android:textColor="@color/brand_ink"

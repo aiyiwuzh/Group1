@@ -185,8 +185,8 @@ public class HistoryActivity extends AppCompatActivity {
 
         List<String> categories = new ArrayList<>();
         categories.add("All categories");
-        for (String label : ExpenseUtils.CATEGORY_LABELS) {
-            categories.add(label);
+        for (int i = 0; i < ExpenseUtils.CATEGORY_VALUES.length; i++) {
+            categories.add(ExpenseUtils.CATEGORY_LABELS[i]);
         }
         categorySpinner.setAdapter(spinnerAdapter(categories));
         if (filters != null && filters.getCategory() != null) {
@@ -318,6 +318,8 @@ public class HistoryActivity extends AppCompatActivity {
                 .setTitle(item.getTitle())
                 .setMessage(ExpenseUtils.formatMoney(item.getAmount())
                         + "\nRecorded " + ExpenseUtils.formatDate(item.getCreatedAt())
+                        + (item.getNote() == null || item.getNote().isBlank()
+                        ? "" : "\nNote: " + item.getNote())
                         + "\n\nThis repayment was made outside SplitSmart. "
                         + "The person who recorded it can edit or delete it on the balances screen.")
                 .setNegativeButton("Close", null)
@@ -378,15 +380,17 @@ public class HistoryActivity extends AppCompatActivity {
                 badge.setBackgroundResource(R.drawable.bg_status_chip);
                 meta = ExpenseUtils.categoryLabel(item.getCategory())
                         + " · Paid by " + item.getPayer().getName()
-                        + " · " + item.getParticipantCount() + " people";
+                        + " · " + (item.getParticipants() == null
+                        ? item.getParticipantCount() + " people"
+                        : ExpenseUtils.joinNames(item.getParticipants()));
                 if (item.isSettled()) {
                     meta += " · Settled";
                 }
             } else {
-                badge.setText("PAYMENT");
+                badge.setText("SETTLEMENT");
                 badge.setTextColor(getResources().getColor(R.color.brand_ink, null));
                 badge.setBackgroundResource(R.drawable.bg_history_settlement_chip);
-                meta = "Recorded payment";
+                meta = "Recorded settlement";
             }
 
             ((TextView) row.findViewById(R.id.tvHistoryTitle)).setText(item.getTitle());
