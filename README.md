@@ -131,7 +131,7 @@ These checks verify the local HTTP endpoint and a simple database query. They **
 3. Allow Gradle to sync; install any SDK components requested by Android Studio.
 4. Start an Android Virtual Device (AVD) and run the app.
 
-For future Retrofit integration:
+Backend Connection Configuration:
 
 | Android runtime | Backend base URL |
 |---|---|
@@ -426,7 +426,7 @@ Every parameter is optional:
 | `memberId` | a member's user id | Expenses the member paid for or took part in, and settlements they paid or received |
 | `sort` | `NEWEST` (default), `OLDEST`, `AMOUNT_HIGH`, `AMOUNT_LOW` | Order of the list. Ties are ordered by type and id so the list never reshuffles. |
 
-An unknown `type`, `category` or `sort`, or a `memberId` who is not in the group, returns `400`.
+An unknown `type` or `sort`, an invalid category value, or a `memberId` outside the group returns `400`. Valid custom category names are accepted even if no expenses match.
 
 Response:
 
