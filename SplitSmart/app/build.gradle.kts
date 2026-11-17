@@ -19,6 +19,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Lets createDebugUnitTestCoverageReport measure JUnit (white-box) coverage.
+            enableUnitTestCoverage = true
+        }
         release {
             optimization {
                 enable = false

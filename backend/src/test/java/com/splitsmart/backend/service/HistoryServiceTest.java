@@ -246,8 +246,10 @@ class HistoryServiceTest {
 
     @Test
     void keywordMatchesTitlesAndNotesCaseSensitively() {
-        // 14 by title, 10 by its note
-        assertEquals(List.of(14L, 10L), ids(history("  groceries ", null, null, null, null)));
+        // Search is case-sensitive: "Groceries" is only in 14's title and
+        // "groceries" is only in 10's note ("weekly groceries").
+        assertEquals(List.of(14L), ids(history("  Groceries ", null, null, null, null)));
+        assertEquals(List.of(10L), ids(history("groceries", null, null, null, null)));
         assertTrue(history("GROCERIES", null, null, null, null).items().isEmpty());
     }
 
@@ -303,13 +305,14 @@ class HistoryServiceTest {
 
     @Test
     void filtersCombine() {
-        assertEquals(List.of(13L), ids(history("rent", "EXPENSE", "HOUSING", 2L, "NEWEST")));
+        assertEquals(List.of(13L), ids(history("Rent", "EXPENSE", "HOUSING", 2L, "NEWEST")));
     }
 
     @Test
     void invalidFiltersAreRejected() {
         assertStatus(HttpStatus.BAD_REQUEST, () -> history(null, "refund", null, null, null));
-        assertStatus(HttpStatus.BAD_REQUEST, () -> history(null, null, "PIZZA", null, null));
+        // Custom categories (V6) make any name up to 50 characters a valid filter, so an
+        // unknown category is no longer rejected; HistoryServiceBranchTest covers its limit.
         assertStatus(HttpStatus.BAD_REQUEST, () -> history(null, null, null, null, "random"));
         assertStatus(HttpStatus.BAD_REQUEST, () -> history(null, null, null, 99L, null));
     }

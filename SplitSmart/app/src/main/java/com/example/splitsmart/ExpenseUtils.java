@@ -44,7 +44,7 @@ public final class ExpenseUtils {
 
     public static int categoryIndex(String value) {
         for (int i = 0; i < CATEGORY_VALUES.length; i++) {
-            if (CATEGORY_VALUES[i].equals(value)) {
+            if (CATEGORY_VALUES[i].equalsIgnoreCase(value)) {
                 return i;
             }
         }
