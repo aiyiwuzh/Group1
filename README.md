@@ -139,7 +139,7 @@ For future Retrofit integration:
 | Backend requests from the host computer | `http://localhost:8080/` |
 | Physical Android device | Requires a reachable host address and appropriate network/port configuration; the current localhost-only port binding is **not** reachable from other devices. |
 
-`10.0.2.2` is the Android emulator's special address for the host computer. It is **not** the address to use inside the backend container. Android may require a debug-only cleartext HTTP allowance for local development; use HTTPS for a publicly deployed API. The Retrofit client and full end-to-end Android connectivity are not yet confirmed.
+The Android application communicates with the local Spring Boot backend through Retrofit using http://10.0.2.2:8080/ when running on an Android emulator. The backend must be running for features requiring API access.
 
 ## Common commands
 
@@ -189,33 +189,105 @@ Backend code lives in `backend/src/main/java/com/splitsmart/backend/`.
 Current structure includes:
 
 ```text
+
 backend/src/main/java/com/splitsmart/backend/
 ├── BackendApplication.java
-├── config/SecurityConfig.java
-└── controller/HealthController.java
+├── config/          # Security configuration
+├── controller/      # REST API endpoints
+├── dto/             # Request and response objects
+├── entity/          # Database entities
+├── exception/       # Error handling
+├── repository/      # Database access
+└── service/         # Business logic
+
 ```
 
 The backend reads its JDBC URL, username, and password from environment variables supplied by Compose. The current JPA setting is `validate`: Hibernate checks mapped tables rather than creating them. When adding entities, introduce version-controlled migrations (for example, Flyway) and coordinate table names and relationships with the team.
 
 The database health endpoint is intended for local development. Remove or restrict it before any public deployment; do not expose raw database details in public error responses.
 
+
 ### Tests
 
-From the repository root, to run the backend tests with the Maven wrapper on Windows:
+SplitSmart uses JUnit 5 and Mockito for backend white-box testing, Espresso for Android black-box testing, and JaCoCo for measuring code coverage.
 
-```bash
-cd backend
-./mvnw.cmd test
-```
+#### Backend JUnit Tests
 
-On macOS/Linux/Git Bash, if the wrapper is executable:
+From the repository root:
 
 ```bash
 cd backend
 ./mvnw test
 ```
 
-**Note:** Some Spring Boot integration tests may need a configured database or test profile. If a test fails, inspect its setup rather than assuming Docker is broken. The Dockerfile's current build skips running tests, so run tests separately before merging or submitting.
+On Windows PowerShell or Command Prompt, use `.\mvnw.cmd test`.
+
+This runs the complete backend test suite.
+
+To run only the authentication and group-management tests:
+
+```bash
+./mvnw -Dtest=AuthenticationGroupServiceTest test
+```
+
+#### Android Espresso Tests
+
+Start Docker and an Android emulator before running the instrumented tests.
+
+From the repository root:
+
+```bash
+cd SplitSmart
+./gradlew :app:connectedDebugAndroidTest
+```
+
+On Windows PowerShell or Command Prompt, use `.\gradlew.bat`.
+
+To run only the authentication UI tests:
+
+```bash
+./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.splitsmart.AuthenticationUITest
+```
+
+Some Espresso tests require the backend to be running with the V9 demo data.
+
+#### Android Local Unit Tests
+
+From `SplitSmart/`:
+
+```bash
+./gradlew :app:testDebugUnitTest
+```
+
+These tests run without an Android emulator.
+
+#### JaCoCo Code Coverage
+
+From `backend/`:
+
+```bash
+./mvnw clean org.jacoco:jacoco-maven-plugin:0.8.13:prepare-agent test org.jacoco:jacoco-maven-plugin:0.8.13:report
+```
+
+The HTML report is generated at:
+
+`backend/target/site/jacoco/index.html`
+
+To measure only the authentication and group-management tests:
+
+```bash
+./mvnw clean org.jacoco:jacoco-maven-plugin:0.8.13:prepare-agent test -Dtest=AuthenticationGroupServiceTest org.jacoco:jacoco-maven-plugin:0.8.13:report
+```
+
+#### Test Results
+
+The complete backend test suite has been verified with 123 passing tests, 0 failures, and 0 errors.
+
+The five authentication JUnit tests and five authentication Espresso tests have also passed individually.
+
+JaCoCo coverage results and descriptions of individual test cases are included in the Project 2.4 Testing Documentation.
+
+The Dockerfile skips tests during image builds, so tests should be run separately before submission.
 
 ## Expense API
 
@@ -245,7 +317,7 @@ Request body for create and edit:
 Rules enforced by the backend (`400` unless noted):
 
 - `amount` is greater than 0 with at most 2 decimal places (stored as `DECIMAL(10,2)`).
-- `category` is `FOOD`, `HOUSING`, `TRANSPORTATION`, `ENTERTAINMENT`, or `OTHER`; it defaults to `OTHER`.
+- `category` supports the standard values `FOOD`, `HOUSING`, `TRANSPORTATION`, `ENTERTAINMENT`, or `OTHER`, as well as custom category labels up to 50 characters. It defaults to `OTHER`.
 - The payer and every participant must be group members; the payer must be a participant; at least 2 participants.
 - The creator may record an expense someone else paid for. Payer, participants, and amount can be edited.
 - `createdAt` is set by the server and never changes; there is no date field in the request.
@@ -350,7 +422,7 @@ Every parameter is optional:
 |---|---|---|
 | `q` | up to 100 characters | Case-sensitive search of expense titles and notes, settlement notes, and settlement payer/recipient names |
 | `type` | `EXPENSE`, `SETTLEMENT`, `ALL` (default) | Only one kind of transaction |
-| `category` | `FOOD`, `HOUSING`, `TRANSPORTATION`, `ENTERTAINMENT`, `OTHER` | Expenses in that category. Settlements have no category, so they are hidden. |
+| `category` | Standard or custom category name | Case-insensitive category filtering. Settlements are excluded. |
 | `memberId` | a member's user id | Expenses the member paid for or took part in, and settlements they paid or received |
 | `sort` | `NEWEST` (default), `OLDEST`, `AMOUNT_HIGH`, `AMOUNT_LOW` | Order of the list. Ties are ordered by type and id so the list never reshuffles. |
 
@@ -452,6 +524,19 @@ git diff --cached --name-only
 - Test the exact version to be demonstrated, including Docker startup, Android emulator launch, and the key user workflows.
 - A local Docker setup needs the demo computer running the containers; it is **not** a public deployment.
 - Watch for the TA's official demo checklist, which may add specific scenarios.
+
+### Project 2.4 Testing Submission
+
+The Project 2.4 submission includes:
+
+1. A ZIP file containing the complete SplitSmart project, including source code, executable tests, bug fixes, and this README.
+2. A PDF testing document containing black-box and white-box test descriptions, execution instructions, results, bug fixes, and code coverage measurements.
+
+The team uses JUnit for white-box testing and Espresso for black-box testing.
+
+Each team member contributes five black-box and five white-box test cases. The final testing document identifies the author of each test.
+
+Before submission, run the complete backend and Android test suites and verify that the final committed version matches the submitted source code.
 
 ## Troubleshooting
 
