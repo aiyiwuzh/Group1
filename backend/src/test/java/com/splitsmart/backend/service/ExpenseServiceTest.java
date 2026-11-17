@@ -426,4 +426,89 @@ class ExpenseServiceTest {
                         Map.of(1L, new BigDecimal("1.00"),
                                 2L, new BigDecimal("1.00")))));
     }
+
+    // ---- Marking expenses settled (Mo's tests)
+
+    @Test
+    void creatorCanMarkExpenseSettled() {
+        Expense expense = existingExpense(alice, false);
+
+        ExpenseResponse response = expenseService.markExpenseSettled(1L, 100L);
+
+        assertTrue(response.settled());
+        assertTrue(expense.isSettled());
+        assertEquals(new BigDecimal("900.00"), response.amount());
+        verify(expenseRepository).saveAndFlush(expense);
+    }
+
+    @Test
+    void nonCreatorCannotMarkExpenseSettled() {
+        Expense expense = existingExpense(alice, false);
+
+        assertStatus(HttpStatus.FORBIDDEN,
+                () -> expenseService.markExpenseSettled(2L, 100L));
+        assertFalse(expense.isSettled());
+        verify(expenseRepository, never()).saveAndFlush(any());
+        verify(expenseRepository, never()).save(any());
+    }
+
+    @Test
+    void markingAnAlreadySettledExpenseDoesNotSaveAgain() {
+        Expense expense = existingExpense(alice, true);
+
+        ExpenseResponse response = expenseService.markExpenseSettled(1L, 100L);
+
+        assertTrue(response.settled());
+        assertTrue(expense.isSettled());
+        verify(expenseRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void outsiderCannotMarkExpenseSettled() {
+        Expense expense = existingExpense(alice, false);
+
+        assertStatus(HttpStatus.FORBIDDEN,
+                () -> expenseService.markExpenseSettled(4L, 100L));
+        assertFalse(expense.isSettled());
+        verify(expenseRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void categoryIsNormalizedAndLengthChecked() {
+        // a known category in any case and with spaces becomes the standard name
+        ExpenseResponse food = expenseService.createExpense(1L, 10L,
+                new ExpenseRequest("Lunch", new BigDecimal("10.00"), "  food ",
+                        1L, List.of(1L, 2L), null, null, null));
+        assertEquals("FOOD", food.category());
+
+        // missing (null) and blank both become OTHER
+        ExpenseResponse missing = expenseService.createExpense(1L, 10L,
+                new ExpenseRequest("Lunch", new BigDecimal("10.00"), null,
+                        1L, List.of(1L, 2L), null, null, null));
+        assertEquals("OTHER", missing.category());
+        ExpenseResponse blank = expenseService.createExpense(1L, 10L,
+                new ExpenseRequest("Lunch", new BigDecimal("10.00"), "   ",
+                        1L, List.of(1L, 2L), null, null, null));
+        assertEquals("OTHER", blank.category());
+
+        // a custom category is kept as typed
+        ExpenseResponse gym = expenseService.createExpense(1L, 10L,
+                new ExpenseRequest("Gym pass", new BigDecimal("10.00"), "Gym",
+                        1L, List.of(1L, 2L), null, null, null));
+        assertEquals("Gym", gym.category());
+
+        // exactly 50 characters is the longest allowed
+        String longest = "A".repeat(50);
+        ExpenseResponse atLimit = expenseService.createExpense(1L, 10L,
+                new ExpenseRequest("Lunch", new BigDecimal("10.00"), longest,
+                        1L, List.of(1L, 2L), null, null, null));
+        assertEquals(longest, atLimit.category());
+
+        // 51 characters is too long, and nothing more is saved
+        String tooLong = "A".repeat(51);
+        assertStatus(HttpStatus.BAD_REQUEST, () -> expenseService.createExpense(1L, 10L,
+                new ExpenseRequest("Lunch", new BigDecimal("10.00"), tooLong,
+                        1L, List.of(1L, 2L), null, null, null)));
+        verify(expenseRepository, times(5)).save(any(Expense.class));
+    }
 }
