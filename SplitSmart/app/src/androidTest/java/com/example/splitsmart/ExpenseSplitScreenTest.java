@@ -279,9 +279,17 @@ public class ExpenseSplitScreenTest {
 
     @Test
     public void expenseWithoutATitleIsRejected() {
-        try (ActivityScenario<AddExpenseActivity> ignored = launchAddExpense()) {
+
+        requireBackend();
+
+        try (ActivityScenario<AddExpenseActivity> ignored =
+                     launchAddExpense()) {
+
             waitForScreenToSettle();
-            onView(withId(R.id.etExpenseAmount)).perform(scrollTo(), replaceText("20.00"));
+
+            onView(withId(R.id.etExpenseAmount))
+                    .perform(scrollTo(), replaceText("20.00"));
+
             closeSoftKeyboard();
 
             tapPreview();
